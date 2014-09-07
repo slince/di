@@ -1,0 +1,23 @@
+{
+    "name": "slince/di",
+    "description": "Slince dependy injection component",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "taosikai",
+            "email": "taosikai@yeah.net"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": "~5.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.2.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Slince\\Config\\": "src/"
+        }
+    }
+}
