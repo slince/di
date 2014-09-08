@@ -78,8 +78,13 @@ class Container
         		$class = $param->getClass();
         		if (! is_null($class)) {
         			$constructorArgs[] = $class->newInstance();
+        		} elseif ($param->isOptional()) {
+        			$constructorArgs[] = $class->getDefaultValue();
         		}
         	}
+        	return $reflection->newInstanceArgs($constructorArgs);
+        } else {
+        	return $reflection->newInstanceWithoutConstructor();
         }
 	}
 }
