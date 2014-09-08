@@ -1,6 +1,6 @@
 {
     "name": "slince/di",
-    "description": "Slince dependy injection component",
+    "description": "Slince dependency injection component",
     "license": "Apache-2.0",
     "authors": [
         {
