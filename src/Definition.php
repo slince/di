@@ -10,12 +10,32 @@ use Slince\Di\Exception\DependencyInjectionException;
 class Definition
 {
 
+    /**
+     * 当前类
+     * 
+     * @var string
+     */
     private $_class;
 
+    /**
+     * 构造参数
+     * 
+     * @var array
+     */
     private $_args = [];
 
+    /**
+     * setter函数
+     * 
+     * @var array
+     */
     private $_calls = [];
 
+    /**
+     * di容器
+     * 
+     * @var Container
+     */
     private $_di;
 
     function __construct($class, Container $di)
@@ -24,21 +44,43 @@ class Definition
         $this->_di = $di;
     }
 
+    /**
+     * 设置一个构造参数
+     *
+     * @param string $varName            
+     * @param mixed $arg            
+     */
     function setArg($varName, $arg)
     {
         $this->_args[$varName] = $arg;
     }
 
+    /**
+     * 批量设置构造参数
+     * 
+     * @param array $args            
+     */
     function setArgs($args)
     {
         $this->_args = $args;
     }
 
+    /**
+     * 设置一个setter函数
+     * 
+     * @param string $methodName            
+     * @param mixed $value            
+     */
     function withCall($methodName, $value)
     {
         $this->_calls[$methodName] = $value;
     }
 
+    /**
+     * 批量设置构造参数
+     * 
+     * @param array $calls            
+     */
     function withCalls($calls)
     {
         $this->_calls = $calls;
