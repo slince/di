@@ -102,17 +102,14 @@ class Definition
         $instance = '';
         if (! is_null($constructor)) {
             $constructorArgs = [];
-            $params = $constructor->getParameters();
-            foreach ($params as $param) {
+            foreach ($constructor->getParameters() as $param) {
                 $varName = $param->getName();
+                //如果定义过依赖 则直接获取
                 if (isset($this->_args[$varName])) {
-                    $class = $param->getClass();
-                    if (is_null($class) || $this->_args[$varName] instanceof $class->name) {
-                        $constructorArgs[] = $this->_args[$varName];
-                    } else {
-                        throw new DependencyInjectionException(sprintf('The value for param "%s" must be instanceof "%s"', $varName, $class));
-                    }
-                } elseif ($param->isOptional()) {
+                    $constructorArgs[] = $this->_args[$varName];
+                } elseif (($dependency = $param->getClass()) != null) {
+                    $constructorArgs[] = $this->_di->get($dependency->getName());
+                }elseif ($param->isOptional()) {
                     $constructorArgs[] = $param->getDefaultValue();
                 } else {
                     throw new DependencyInjectionException(sprintf('Param "%s" must be provided', $varName));
@@ -134,4 +131,5 @@ class Definition
         }
         return $instance;
     }
+    
 }

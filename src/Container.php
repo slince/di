@@ -42,7 +42,7 @@ class Container
     {
         $callback = '';
         if (! $create instanceof \Closure) {
-            $create = function () use($create)
+            $create = function () use ($create)
             {
                 return $create;
             };
@@ -88,15 +88,17 @@ class Container
         if (isset($this->_instances[$key])) {
             return $this->_instances[$key];
         }
-        if (isset($this->_store[$key])) {
-            $instance = call_user_func($this->_store[$key]['callback']);
-            if ($this->_store[$key]['shared']) {
-                $this->_instances[$key] = $instance;
-            }
-            return $instance;
-        } else {
-            throw new DependencyInjectionException(sprintf('Can not find binds with class "%s"', $key));
+        if (! isset($this->_store[$key])) {
+            $this->set($key, function ()
+            {
+                $this->newInstance($key);
+            });
         }
+        $instance = call_user_func($this->_store[$key]['callback']);
+        if ($this->_store[$key]['shared']) {
+            $this->_instances[$key] = $instance;
+        }
+        return $instance;
     }
 
     /**
@@ -119,7 +121,7 @@ class Container
 
     /**
      * 自动获取实例并解决简单的依赖关系
-     *
+     * 并不能解决非类依赖，如有需要请使用类定义
      * @param string $class            
      * @throws DependencyInjectionException
      * @return object
@@ -136,13 +138,13 @@ class Container
             $params = $constructor->getParameters();
             $constructorArgs = [];
             foreach ($params as $param) {
-                $class = $param->getClass();
-                if (! is_null($class)) {
-                    $constructorArgs[] = $this->newInstance($class->getName());
+                $dependency = $param->getClass();
+                if (! is_null($dependency)) {
+                    $constructorArgs[] = $this->get($dependency->getName());
                 } elseif ($param->isOptional()) {
-                    $constructorArgs[] = $class->getDefaultValue();
+                    $constructorArgs[] = $param->getDefaultValue();
                 } else {
-                    throw new DependencyInjectionException();
+                    throw new DependencyInjectionException(sprintf('Could not resolve non-class dependency "%s"', $dependecny->getName()));
                 }
             }
             return $reflection->newInstanceArgs($constructorArgs);
