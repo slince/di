@@ -89,7 +89,7 @@ class Container
             return $this->_instances[$key];
         }
         if (! isset($this->_store[$key])) {
-            $this->set($key, function ()
+            $this->set($key, function () use ($key)
             {
                 $this->newInstance($key);
             });
