@@ -138,9 +138,11 @@ class Container
             foreach ($params as $param) {
                 $class = $param->getClass();
                 if (! is_null($class)) {
-                    $constructorArgs[] = $class->newInstance();
+                    $constructorArgs[] = $this->newInstance($class->getName());
                 } elseif ($param->isOptional()) {
                     $constructorArgs[] = $class->getDefaultValue();
+                } else {
+                    throw new DependencyInjectionException();
                 }
             }
             return $reflection->newInstanceArgs($constructorArgs);
