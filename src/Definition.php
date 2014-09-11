@@ -50,9 +50,10 @@ class Definition
      * @param string $varName            
      * @param mixed $arg            
      */
-    function setArg($varName, $arg)
+    function withArg($varName, $arg)
     {
         $this->_args[$varName] = $arg;
+        return $this;
     }
 
     /**
@@ -60,9 +61,10 @@ class Definition
      *
      * @param array $args            
      */
-    function setArgs($args)
+    function withArgs($args)
     {
         $this->_args = $args;
+        return $this;
     }
 
     /**
@@ -74,6 +76,7 @@ class Definition
     function withCall($methodName, $value)
     {
         $this->_calls[$methodName] = $value;
+        return $this;
     }
 
     /**
@@ -84,6 +87,7 @@ class Definition
     function withCalls($calls)
     {
         $this->_calls = $calls;
+        return $this;
     }
 
     /**

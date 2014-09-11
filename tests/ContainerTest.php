@@ -54,9 +54,9 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     
     function testDefinition()
     {
-        $this->_fixture->bind('ClassD')->setArg('str', 'hello');
+        $this->_fixture->describe('ClassD')->withCall('setStr2', 'world');
         $instance = $this->_fixture->get('ClassD');
-        echo $instance->echoStr();
+        $this->assertNotEmpty($instance->echoStr());
         $this->assertInstanceOf('ClassD', $instance);
     }
 

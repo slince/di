@@ -109,7 +109,7 @@ class Container
      * @param boolean $shared            
      * @return Definition
      */
-    function bind($key, $shared = false)
+    function describe($key, $shared = false)
     {
         $definition = new Definition($key, $this);
         $callback = function () use($definition)

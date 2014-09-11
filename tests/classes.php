@@ -22,7 +22,7 @@ class ClassD
     private $_str1;
     private $_str2;
     private $_c;
-    function __construct(ClassC $c, $str)
+    function __construct(ClassC $c, $str = 'hello')
     {
         $this->_c = $c;
         $this->_str1 = $str;
@@ -32,6 +32,6 @@ class ClassD
     }
     function echoStr()
     {
-        echo $this->_str1, $this->_str2;
+        return $this->_str1 . $this->_str2;
     }
 }
