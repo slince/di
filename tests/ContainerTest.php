@@ -36,7 +36,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $instance = $this->_fixture->get('ClassA');
         $this->assertInstanceOf('ClassA', $instance);
     }
-
+    
     function testSetNewInstance()
     {
         $this->_fixture->set('ClassC', function (){
@@ -44,6 +44,20 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         });
         $instance = $this->_fixture->get('ClassC');
         $this->assertInstanceOf('ClassC', $instance);
+    }
+    
+    function testAutoGet()
+    {
+        $instance = $this->_fixture->get('ClassC');
+        $this->assertInstanceOf('ClassC', $instance);
+    }
+    
+    function testDefinition()
+    {
+        $this->_fixture->bind('ClassD')->setArg('str', 'hello');
+        $instance = $this->_fixture->get('ClassD');
+        echo $instance->echoStr();
+        $this->assertInstanceOf('ClassD', $instance);
     }
 
     function testShare()

@@ -12,28 +12,28 @@ class Definition
 
     /**
      * 当前类
-     * 
+     *
      * @var string
      */
     private $_class;
 
     /**
      * 构造参数
-     * 
+     *
      * @var array
      */
     private $_args = [];
 
     /**
      * setter函数
-     * 
+     *
      * @var array
      */
     private $_calls = [];
 
     /**
      * di容器
-     * 
+     *
      * @var Container
      */
     private $_di;
@@ -57,7 +57,7 @@ class Definition
 
     /**
      * 批量设置构造参数
-     * 
+     *
      * @param array $args            
      */
     function setArgs($args)
@@ -67,7 +67,7 @@ class Definition
 
     /**
      * 设置一个setter函数
-     * 
+     *
      * @param string $methodName            
      * @param mixed $value            
      */
@@ -78,7 +78,7 @@ class Definition
 
     /**
      * 批量设置构造参数
-     * 
+     *
      * @param array $calls            
      */
     function withCalls($calls)
@@ -104,12 +104,12 @@ class Definition
             $constructorArgs = [];
             foreach ($constructor->getParameters() as $param) {
                 $varName = $param->getName();
-                //如果定义过依赖 则直接获取
+                // 如果定义过依赖 则直接获取
                 if (isset($this->_args[$varName])) {
                     $constructorArgs[] = $this->_args[$varName];
                 } elseif (($dependency = $param->getClass()) != null) {
                     $constructorArgs[] = $this->_di->get($dependency->getName());
-                }elseif ($param->isOptional()) {
+                } elseif ($param->isOptional()) {
                     $constructorArgs[] = $param->getDefaultValue();
                 } else {
                     throw new DependencyInjectionException(sprintf('Param "%s" must be provided', $varName));
@@ -131,5 +131,4 @@ class Definition
         }
         return $instance;
     }
-    
 }

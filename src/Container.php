@@ -6,6 +6,7 @@
 namespace Slince\Di;
 
 use Slince\Di\Exception\DependencyInjectionException;
+
 class Container
 {
 
@@ -31,7 +32,7 @@ class Container
     private $_store = [];
 
     /**
-     * 设置一个建造刮泥
+     * 设置一个建造关系
      *
      * @param string $key            
      * @param object|\Closure $create            
@@ -42,7 +43,7 @@ class Container
     {
         $callback = '';
         if (! $create instanceof \Closure) {
-            $create = function () use ($create)
+            $create = function () use($create)
             {
                 return $create;
             };
@@ -89,9 +90,9 @@ class Container
             return $this->_instances[$key];
         }
         if (! isset($this->_store[$key])) {
-            $this->set($key, function () use ($key)
+            $this->set($key, function () use($key)
             {
-                $this->newInstance($key);
+                return $this->newInstance($key);
             });
         }
         $instance = call_user_func($this->_store[$key]['callback']);
@@ -113,7 +114,7 @@ class Container
         $definition = new Definition($key, $this);
         $callback = function () use($definition)
         {
-            $definition->newInstance();
+            return $definition->newInstance();
         };
         $this->set($key, $callback, $shared);
         return $definition;
@@ -122,6 +123,7 @@ class Container
     /**
      * 自动获取实例并解决简单的依赖关系
      * 并不能解决非类依赖，如有需要请使用类定义
+     *
      * @param string $class            
      * @throws DependencyInjectionException
      * @return object
@@ -135,9 +137,8 @@ class Container
         }
         $constructor = $reflection->getConstructor();
         if (! is_null($constructor)) {
-            $params = $constructor->getParameters();
             $constructorArgs = [];
-            foreach ($params as $param) {
+            foreach ($constructor->getParameters() as $param) {
                 $dependency = $param->getClass();
                 if (! is_null($dependency)) {
                     $constructorArgs[] = $this->get($dependency->getName());
