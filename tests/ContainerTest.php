@@ -59,6 +59,13 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertNotEmpty($instance->echoStr());
         $this->assertInstanceOf('ClassD', $instance);
     }
+    
+    function testException()
+    {
+        $this->setExpectedException('Slince\Di\Exception\DependencyInjectionException');
+        $this->_fixture->describe('ClassD')->withCall('setStr3', 'world');
+        $instance = $this->_fixture->get('ClassD');
+    }
 
     function testShare()
     {

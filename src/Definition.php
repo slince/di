@@ -15,7 +15,7 @@ class Definition
      *
      * @var string
      */
-    private $_class;
+    private $_className;
 
     /**
      * 构造参数
@@ -31,17 +31,9 @@ class Definition
      */
     private $_calls = [];
 
-    /**
-     * di容器
-     *
-     * @var Container
-     */
-    private $_di;
-
-    function __construct($class, Container $di)
+    function __construct($className)
     {
-        $this->_class = $class;
-        $this->_di = $di;
+        $this->_className = $className;
     }
 
     /**
@@ -91,48 +83,32 @@ class Definition
     }
 
     /**
-     * 实例化该类，但必须提供所有的相关定义
+     * 获取当前类名
      *
-     * @throws DependencyInjectionException
+     * @return string
      */
-    function newInstance()
+    function getClassName()
     {
-        try {
-            $reflection = new \ReflectionClass($this->_class);
-        } catch (\ReflectionException $e) {
-            throw new DependencyInjectionException(sprintf('The class "%s" is invalid', $this->_class));
-        }
-        $constructor = $reflection->getConstructor();
-        $instance = '';
-        if (! is_null($constructor)) {
-            $constructorArgs = [];
-            foreach ($constructor->getParameters() as $param) {
-                $varName = $param->getName();
-                // 如果定义过依赖 则直接获取
-                if (isset($this->_args[$varName])) {
-                    $constructorArgs[] = $this->_args[$varName];
-                } elseif (($dependency = $param->getClass()) != null) {
-                    $constructorArgs[] = $this->_di->get($dependency->getName());
-                } elseif ($param->isOptional()) {
-                    $constructorArgs[] = $param->getDefaultValue();
-                } else {
-                    throw new DependencyInjectionException(sprintf('Param "%s" must be provided', $varName));
-                }
-            }
-            $instance = $reflection->newInstanceArgs($constructorArgs);
-        } else {
-            $instance = $reflection->newInstanceWithoutConstructor();
-        }
-        if (! empty($this->_calls)) {
-            foreach ($this->_calls as $method => $value) {
-                try {
-                    $methodReflection = $reflection->getMethod($method);
-                } catch (\ReflectionException $e) {
-                    throw new DependencyInjectionException(sprintf('Class "%s" dont have method "%s"', $this->_class, $method));
-                }
-                $methodReflection->invoke($instance, $value);
-            }
-        }
-        return $instance;
+        return $this->_className;
+    }
+
+    /**
+     * 获取所有的构造参数
+     *
+     * @return array
+     */
+    function getArgs()
+    {
+        return $this->_args;
+    }
+
+    /**
+     * 获取setter函数
+     *
+     * @return array
+     */
+    function getCalls()
+    {
+        return $this->_calls;
     }
 }

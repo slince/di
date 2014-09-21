@@ -111,10 +111,10 @@ class Container
      */
     function describe($key, $shared = false)
     {
-        $definition = new Definition($key, $this);
+        $definition = new Definition($key);
         $callback = function () use($definition)
         {
-            return $definition->newInstance();
+            return $this->newInstanceFromDefinition($definition);
         };
         $this->set($key, $callback, $shared);
         return $definition;
@@ -124,17 +124,13 @@ class Container
      * 自动获取实例并解决简单的依赖关系
      * 并不能解决非类依赖，如有需要请使用类定义
      *
-     * @param string $class            
+     * @param string $className            
      * @throws DependencyInjectionException
      * @return object
      */
-    function newInstance($class)
+    function newInstance($className)
     {
-        try {
-            $reflection = new \ReflectionClass($class);
-        } catch (\ReflectionException $e) {
-            throw new DependencyInjectionException(sprintf('The class "%s" is invalid', $key));
-        }
+        $reflection = $this->reflectClass($className);
         $constructor = $reflection->getConstructor();
         if (! is_null($constructor)) {
             $constructorArgs = [];
@@ -152,6 +148,66 @@ class Container
         } else {
             return $reflection->newInstanceWithoutConstructor();
         }
+    }
+
+    /**
+     * 基于定义实例化该类，但必须提供所有的相关定义
+     *
+     * @param Definition $definition            
+     * @throws DependencyInjectionException
+     * @return object
+     */
+    function newInstanceFromDefinition(Definition $definition)
+    {
+        $reflection = $this->reflectClass($definition->getClassName());
+        $constructor = $reflection->getConstructor();
+        if (! is_null($constructor)) {
+            $constructorArgs = [];
+            $args = $definition->getArgs();
+            foreach ($constructor->getParameters() as $param) {
+                $varName = $param->getName();
+                // 如果定义过依赖 则直接获取
+                if (isset($args[$varName])) {
+                    $constructorArgs[] = $args[$varName];
+                } elseif (($dependency = $param->getClass()) != null) {
+                    $constructorArgs[] = $this->get($dependency->getName());
+                } elseif ($param->isOptional()) {
+                    $constructorArgs[] = $param->getDefaultValue();
+                } else {
+                    throw new DependencyInjectionException(sprintf('Param "%s" must be provided', $varName));
+                }
+            }
+            $instance = $reflection->newInstanceArgs($constructorArgs);
+        } else {
+            $instance = $reflection->newInstanceWithoutConstructor();
+        }
+        // 触发setter函数
+        foreach ($definition->getCalls() as $method => $value) {
+            try {
+                $methodReflection = $reflection->getMethod($method);
+            } catch (\ReflectionException $e) {
+                throw new DependencyInjectionException(sprintf('Class "%s" dont have method "%s"', $definition->getClassName(), $method));
+            }
+            $methodReflection->invoke($instance, $value);
+        }
+        return $instance;
+    }
+
+    /**
+     * 获取类的反射对象
+     *
+     * @param string $className            
+     * @throws DependencyInjectionException
+     * @return \ReflectionClass
+     */
+    function reflectClass($className)
+    {
+        try {
+            $reflection = new \ReflectionClass($className);
+        } catch (\ReflectionException $e) {
+            throw new DependencyInjectionException(sprintf('Class "%s" is invalid', $className));
+        }
+        return $reflection;
     }
 
     /**
