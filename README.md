@@ -28,7 +28,7 @@
         return new Reader(); 
     });
     $instance = $di->get('Reader');
-    //结果:bool(true)
+    //结果 bool(true)
     var_dump($instance instanceof Reader);
 
 如果需要定义一个共享的实例,则使用share取代set方法
@@ -52,7 +52,7 @@
     //结果 bool(true)
     var_dump($instance instanceof Reader);
 
-自动获取可以解决简单的实例依赖关系，但如果依赖是一个标量并且没有不是可选的，则无法完成自动注入。此时应选用第三种方法，主动描述一个类。
+自动获取可以解决简单的实例依赖关系，但如果依赖是一个标量并且不是可选的，则无法完成自动注入。此时应选用第三种方法，主动描述一个类。
 
 #### 3、描述类
 
