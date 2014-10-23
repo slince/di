@@ -1,7 +1,7 @@
 <?php
 /**
  * slince dependency injection component
- * @author Taosikai <taosikai@yeah.net>
+ * @author Tao <taosikai@yeah.net>
  */
 namespace Slince\Di;
 
