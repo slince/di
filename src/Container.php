@@ -135,8 +135,8 @@ class Container
         if (! is_null($constructor)) {
             $constructorArgs = [];
             foreach ($constructor->getParameters() as $param) {
-                if ($param instanceof ServiceDependency) {
-                    $constructorArgs[] = $this->get($param->getName());
+                if ($param instanceof DependencyInterface) {
+                    $constructorArgs[] = $param->getDependency();
                     continue;
                 }
                 $dependency = $param->getClass();
@@ -173,8 +173,8 @@ class Container
                 // 如果定义过依赖 则直接获取
                 if (isset($args[$varName])) {
                     $constructorArgs[] = $args[$varName];
-                } elseif ($param instanceof ServiceDependency) {
-                    $constructorArgs[] = $this->get($param->getName());
+                } elseif ($param instanceof DependencyInterface) {
+                    $constructorArgs[] = $param->getDependency();
                 } elseif (($dependency = $param->getClass()) != null) {
                     $constructorArgs[] = $this->get($dependency->getName());
                 } elseif ($param->isOptional()) {
