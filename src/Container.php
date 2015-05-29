@@ -128,7 +128,7 @@ class Container
      * @throws DependencyInjectionException
      * @return object
      */
-    function newInstance($className)
+    function create($className, $args = [])
     {
         $reflection = $this->reflectClass($className);
         $constructor = $reflection->getConstructor();
@@ -151,6 +151,27 @@ class Container
             return $reflection->newInstanceArgs($constructorArgs);
         } else {
             return $reflection->newInstanceWithoutConstructor();
+        }
+    }
+    
+    private function __resolveConstructArgs(\ReflectionClass $reflection, $args)
+    {
+        $constructorArgs = [];
+        $constructor = $reflection->getConstructor();
+        foreach ($constructor->getParameters() as $param) {
+            $varName = $param->getName();
+            // 如果定义过依赖 则直接获取
+            if (isset($args[$varName])) {
+                $constructorArgs[] = $args[$varName];
+            } elseif ($param instanceof DependencyInterface) {
+                $constructorArgs[] = $param->getDependency();
+            } elseif (($dependency = $param->getClass()) != null) {
+                $constructorArgs[] = $this->get($dependency->getName());
+            } elseif ($param->isOptional()) {
+                $constructorArgs[] = $param->getDefaultValue();
+            } else {
+                throw new DependencyInjectionException(sprintf('Param "%s" must be provided', $varName));
+            }
         }
     }
 
