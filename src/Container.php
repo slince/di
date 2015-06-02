@@ -154,10 +154,9 @@ class Container
         }
     }
     
-    private function __resolveConstructArgs(\ReflectionClass $reflection, $args)
+    private function __resolveConstructArgs($params)
     {
         $constructorArgs = [];
-        $constructor = $reflection->getConstructor();
         foreach ($constructor->getParameters() as $param) {
             $varName = $param->getName();
             // 如果定义过依赖 则直接获取
