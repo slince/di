@@ -128,40 +128,33 @@ class Container
      * @throws DependencyInjectionException
      * @return object
      */
-    function create($className, $args = [])
+    function create($className, $params = [])
     {
         $reflection = $this->reflectClass($className);
         $constructor = $reflection->getConstructor();
         if (! is_null($constructor)) {
-            $constructorArgs = [];
-            foreach ($constructor->getParameters() as $param) {
-                if ($param instanceof DependencyInterface) {
-                    $constructorArgs[] = $param->getDependency();
-                    continue;
-                }
-                $dependency = $param->getClass();
-                if (! is_null($dependency)) {
-                    $constructorArgs[] = $this->get($dependency->getName());
-                } elseif ($param->isOptional()) {
-                    $constructorArgs[] = $param->getDefaultValue();
-                } else {
-                    throw new DependencyInjectionException(sprintf('Could not resolve non-class dependency "%s"', $dependecny->getName()));
-                }
-            }
+            $constructorArgs = $this->_resolveConstructArgs($constructor, $params);
             return $reflection->newInstanceArgs($constructorArgs);
         } else {
             return $reflection->newInstanceWithoutConstructor();
         }
     }
     
-    private function __resolveConstructArgs($params)
+    /**
+     * 处理构造方法所需要的参数
+     * @param \ReflectionMethod $constructor
+     * @param array $params
+     * @throws DependencyInjectionException
+     * @return array
+     */
+    private function _resolveConstructArgs(\ReflectionMethod $constructor, array $params)
     {
         $constructorArgs = [];
         foreach ($constructor->getParameters() as $param) {
             $varName = $param->getName();
             // 如果定义过依赖 则直接获取
-            if (isset($args[$varName])) {
-                $constructorArgs[] = $args[$varName];
+            if (isset($params[$varName])) {
+                $constructorArgs[] = $params[$varName];
             } elseif ($param instanceof DependencyInterface) {
                 $constructorArgs[] = $param->getDependency();
             } elseif (($dependency = $param->getClass()) != null) {
@@ -172,6 +165,7 @@ class Container
                 throw new DependencyInjectionException(sprintf('Param "%s" must be provided', $varName));
             }
         }
+        return $constructorArgs;
     }
 
     /**
