@@ -43,7 +43,7 @@ class Container
     {
         $callback = '';
         if (! $create instanceof \Closure) {
-            $create = function () use($create)
+            $create = function () use ($create)
             {
                 return $create;
             };
@@ -92,7 +92,7 @@ class Container
         if (! isset($this->_store[$key])) {
             $this->set($key, function () use($key)
             {
-                return $this->newInstance($key);
+                return $this->create($key);
             });
         }
         $instance = call_user_func($this->_store[$key]['callback']);
@@ -114,7 +114,7 @@ class Container
         $definition = new Definition($key);
         $callback = function () use($definition)
         {
-            return $this->newInstanceFromDefinition($definition);
+            return $this->createFromDefinition($definition);
         };
         $this->set($key, $callback, $shared);
         return $definition;
