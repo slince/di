@@ -6,56 +6,56 @@ use Slince\Di\Container;
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
 
-    private $_fixture;
+    private $_container;
 
     function setUp()
     {
-        $this->_fixture = new Container();
+        $this->_container = new Container();
     }
 
     function tearDown()
     {
-        unset($this->_fixture);
+        unset($this->_container);
     }
 
     function testSetInstance()
     {
         $instance = new ClassA();
-        $this->_fixture->set('ClassA', $instance);
-        $_instance = $this->_fixture->get('ClassA');
+        $this->_container->set('ClassA', $instance);
+        $_instance = $this->_container->get('ClassA');
         $this->assertInstanceOf('ClassA', $_instance);
         $this->assertEquals($instance, $_instance);
     }
 
     function testSetCallback()
     {
-        $this->_fixture->set('ClassA', function ()
+        $this->_container->set('ClassA', function ()
         {
             return new ClassA();
         });
-        $instance = $this->_fixture->get('ClassA');
+        $instance = $this->_container->get('ClassA');
         $this->assertInstanceOf('ClassA', $instance);
     }
     
     function testSetNewInstance()
     {
-        $this->_fixture->set('ClassC', function (){
-            return $this->_fixture->newInstance('ClassC');
+        $this->_container->set('ClassC', function (){
+            return $this->_container->create('ClassC');
         });
-        $instance = $this->_fixture->get('ClassC');
+        $instance = $this->_container->get('ClassC');
         $this->assertInstanceOf('ClassC', $instance);
     }
     
     function testAutoGet()
     {
-        $instance = $this->_fixture->get('ClassC');
+        $instance = $this->_container->get('ClassC');
         $this->assertInstanceOf('ClassC', $instance);
     }
     
     function testDefinition()
     {
-        $this->_fixture->describe('ClassD')->withCall('setStr2', 'world');
-        $instance = $this->_fixture->get('ClassD');
+        $this->_container->describe('ClassD')->withCall('setStr2', 'world');
+        $instance = $this->_container->get('ClassD');
         $this->assertNotEmpty($instance->echoStr());
         $this->assertInstanceOf('ClassD', $instance);
     }
@@ -63,18 +63,18 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     function testException()
     {
         $this->setExpectedException('Slince\Di\Exception\DependencyInjectionException');
-        $this->_fixture->describe('ClassD')->withCall('setStr3', 'world');
-        $instance = $this->_fixture->get('ClassD');
+        $this->_container->describe('ClassD')->withCall('setStr3', 'world');
+        $instance = $this->_container->get('ClassD');
     }
 
     function testShare()
     {
-        $this->_fixture->share('ClassA', function ()
+        $this->_container->share('ClassA', function ()
         {
             return new ClassA();
         });
-        $instance = $this->_fixture->get('ClassA');
-        $instance2 = $this->_fixture->get('ClassA');
+        $instance = $this->_container->get('ClassA');
+        $instance2 = $this->_container->get('ClassA');
         $this->assertInstanceOf('ClassA', $instance);
         $this->assertInstanceOf('ClassA', $instance2);
         $this->assertEquals($instance, $instance2);
@@ -82,13 +82,13 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
 
     function testAlias()
     {
-        $this->_fixture->set('ClassA', function ()
+        $this->_container->set('ClassA', function ()
         {
             return new ClassA();
         });
-        $this->_fixture->alias('aliasA', 'ClassA');
-        $instance = $this->_fixture->get('ClassA');
-        $instance2 = $this->_fixture->get('aliasA');
+        $this->_container->alias('aliasA', 'ClassA');
+        $instance = $this->_container->get('ClassA');
+        $instance2 = $this->_container->get('aliasA');
         $this->assertEquals($instance, $instance2);
     }
 }

@@ -79,7 +79,7 @@
 
     $di = new Slince\Di\Container();
     //描述
-    $di->describe('Reader')->withArg('file', 'C:/a.pdf')->withCall('setMod', 1);
+    $di->describe('Reader')->withArg(1, 'C:/a.pdf')->withCall('setMod', 1);
     //获取实例
     $instance = $di->get('Reader');
     //结果 bool(true)

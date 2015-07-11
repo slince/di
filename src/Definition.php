@@ -39,12 +39,12 @@ class Definition
     /**
      * 设置一个构造参数
      *
-     * @param string $varName            
+     * @param int $varIndex            
      * @param mixed $arg            
      */
-    function withArg($varName, $arg)
+    function withArg($varIndex, $arg)
     {
-        $this->_args[$varName] = $arg;
+        $this->_args[$varIndex] = $arg;
         return $this;
     }
 

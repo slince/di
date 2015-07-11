@@ -112,7 +112,7 @@ class Container
     function describe($key, $shared = false)
     {
         $definition = new Definition($key);
-        $callback = function () use($definition)
+        $callback = function () use ($definition)
         {
             return $this->createFromDefinition($definition);
         };
@@ -122,7 +122,6 @@ class Container
 
     /**
      * 自动获取实例并解决简单的依赖关系
-     * 并不能解决非类依赖，如有需要请使用类定义
      *
      * @param string $className            
      * @throws DependencyInjectionException
@@ -130,7 +129,7 @@ class Container
      */
     function create($className, $params = [])
     {
-        $reflection = $this->reflectClass($className);
+        $reflection = $this->_reflectClass($className);
         $constructor = $reflection->getConstructor();
         if (! is_null($constructor)) {
             $constructorArgs = $this->_resolveConstructArgs($constructor, $params);
@@ -140,10 +139,24 @@ class Container
         }
     }
     
+    /**
+     * 根据definition创建实例
+     * 
+     * @param Definition $definition
+     * @throws DependencyInjectionException
+     * @return object
+     */
     function createFromDefinition(Definition $definition)
     {
         $params = $definition->getArgs();
-        $instance = $this->create($definition->getClassName(), $params);
+        $reflection = $this->_reflectClass($definition->getClassName());
+        $constructor = $reflection->getConstructor();
+        if (! is_null($constructor)) {
+            $constructorArgs = $this->_resolveConstructArgs($constructor, $params);
+            $instance = $reflection->newInstanceArgs($constructorArgs);
+        } else {
+            $instance = $reflection->newInstanceWithoutConstructor();
+        }
         // 触发setter函数
         foreach ($definition->getCalls() as $method => $value) {
             try {
@@ -167,10 +180,10 @@ class Container
     {
         $constructorArgs = [];
         foreach ($constructor->getParameters() as $param) {
-            $varName = $param->getName();
+            $varIndex = $param->getPosition();
             // 如果定义过依赖 则直接获取
-            if (isset($params[$varName])) {
-                $constructorArgs[] = $params[$varName];
+            if (isset($params[$varIndex])) {
+                $constructorArgs[] = $params[$varIndex];
             } elseif ($param instanceof DependencyInterface) {
                 $constructorArgs[] = $param->getDependency();
             } elseif (($dependency = $param->getClass()) != null) {
