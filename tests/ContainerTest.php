@@ -68,7 +68,9 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     function testException()
     {
         $this->setExpectedException('Slince\Di\Exception\DependencyInjectionException');
-        $this->_container->describe('ClassD')->withCall('setStr3', 'world');
+        $arr = $this->_container->setDefinition('ClassD', new Definition('ClassD'))
+           ->setMethodCall('setStr3', ['world'])
+            ->getMethodCalls();
         $instance = $this->_container->get('ClassD');
     }
 

@@ -91,6 +91,7 @@ class Definition
     function setMethodCall($method, array $arguments = [])
     {
         $this->_methodCalls[$method] = $arguments;
+        return $this;
     }
 
     /**
@@ -101,6 +102,7 @@ class Definition
     function setMethodCalls(array $methodCalls = [])
     {
         $this->_methodCalls = array_merge($this->_methodCalls, $methodCalls);
+        return $this;
     }
 
     /**

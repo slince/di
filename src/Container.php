@@ -158,7 +158,7 @@ class Container
             $instance = $reflection->newInstanceWithoutConstructor();
         }
         // 触发setter函数
-        foreach ($definition->getArguments() as $method => $methodArguments) {
+        foreach ($definition->getMethodCalls() as $method => $methodArguments) {
             try {
                 $methodReflection = $reflection->getMethod($method);
             } catch (\ReflectionException $e) {
