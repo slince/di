@@ -2,6 +2,7 @@
 include __DIR__ . '/classes.php';
 
 use Slince\Di\Container;
+use Slince\Di\Definition;
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
@@ -54,8 +55,12 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     
     function testDefinition()
     {
-        $this->_container->describe('ClassD')->withCall('setStr2', 'world');
-        $instance = $this->_container->get('ClassD');
+        $this->_container->setDefinition('classd', new Definition(
+            'ClassD',
+            [],
+            ['setStr2' => ['world']]
+        ));
+        $instance = $this->_container->get('classd');
         $this->assertNotEmpty($instance->echoStr());
         $this->assertInstanceOf('ClassD', $instance);
     }

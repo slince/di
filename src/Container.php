@@ -56,6 +56,24 @@ class Container
     }
 
     /**
+     * 如果不能简单获取，则使用设置定义的方式
+     *
+     * @param string $key
+     * @param Definition $definition
+     * @param boolean $shared
+     * @return Definition
+     */
+    function setDefinition($key, Definition $definition, $shared = false)
+    {
+        $callback = function () use ($definition)
+        {
+            return $this->createFromDefinition($definition);
+        };
+        $this->set($key, $callback, $shared);
+        return $definition;
+    }
+    
+    /**
      * 设置一个共享关系
      *
      * @param string $key            
@@ -103,36 +121,18 @@ class Container
     }
 
     /**
-     * 描述一个建造关系
-     *
-     * @param string $key            
-     * @param boolean $shared            
-     * @return Definition
-     */
-    function describe($key, $shared = false)
-    {
-        $definition = new Definition($key);
-        $callback = function () use ($definition)
-        {
-            return $this->createFromDefinition($definition);
-        };
-        $this->set($key, $callback, $shared);
-        return $definition;
-    }
-
-    /**
      * 自动获取实例并解决简单的依赖关系
      *
      * @param string $className            
      * @throws DependencyInjectionException
      * @return object
      */
-    function create($className, $params = [])
+    function create($className, $arguments = [])
     {
         $reflection = $this->_reflectClass($className);
         $constructor = $reflection->getConstructor();
         if (! is_null($constructor)) {
-            $constructorArgs = $this->_resolveConstructArgs($constructor, $params);
+            $constructorArgs = $this->_resolveConstructArguments($constructor, $arguments);
             return $reflection->newInstanceArgs($constructorArgs);
         } else {
             return $reflection->newInstanceWithoutConstructor();
@@ -148,23 +148,23 @@ class Container
      */
     function createFromDefinition(Definition $definition)
     {
-        $params = $definition->getArgs();
+        $arguments = $definition->getArguments();
         $reflection = $this->_reflectClass($definition->getClassName());
         $constructor = $reflection->getConstructor();
         if (! is_null($constructor)) {
-            $constructorArgs = $this->_resolveConstructArgs($constructor, $params);
+            $constructorArgs = $this->_resolveConstructArguments($constructor, $arguments);
             $instance = $reflection->newInstanceArgs($constructorArgs);
         } else {
             $instance = $reflection->newInstanceWithoutConstructor();
         }
         // 触发setter函数
-        foreach ($definition->getCalls() as $method => $value) {
+        foreach ($definition->getArguments() as $method => $methodArguments) {
             try {
                 $methodReflection = $reflection->getMethod($method);
             } catch (\ReflectionException $e) {
                 throw new DependencyInjectionException(sprintf('Class "%s" dont have method "%s"', $definition->getClassName(), $method));
             }
-            $methodReflection->invoke($instance, $value);
+            $methodReflection->invokeArgs($instance, $methodArguments);
         }
         return $instance;
     }
@@ -176,7 +176,7 @@ class Container
      * @throws DependencyInjectionException
      * @return array
      */
-    protected function _resolveConstructArgs(\ReflectionMethod $constructor, array $params)
+    protected function _resolveConstructArguments(\ReflectionMethod $constructor, array $params)
     {
         $constructorArgs = [];
         foreach ($constructor->getParameters() as $param) {
