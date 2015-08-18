@@ -79,7 +79,7 @@
 
     $di = new Slince\Di\Container();
     //描述
-    $di->describe('Reader')->withArg(1, 'C:/a.pdf')->withCall('setMod', 1);
+    $di->setDefinition('Reader', new Definition('Reader')->setArgument(1, 'C:/a.pdf')->setMethodCall('setMod', [1]);
     //获取实例
     $instance = $di->get('Reader');
     //结果 bool(true)
@@ -87,10 +87,10 @@
 
 对于一个依赖较多的类，只需要指出它的标量依赖即可，当然指出全部依赖亦可；如果需要共享，则需要describe提供第二个参数true；以下是常用的指出依赖的方法:
 
-1. withArg($varName, $arg) 指出构造依赖. 
-2. withArgs($args) 批量指出所有依赖，会覆盖已有的定义
-3. withCall($methodName, $value) 指出setter依赖
-4. withCalls($calls) 批量指出所有setter依赖，同样会覆盖已有的定义
+1. setArgument($index, $value) 指出构造依赖. 
+2. setArguments(array $arguments) 批量指出所有依赖，会覆盖已有的定义
+3. setMethodCall($method, array $arguments) 指出setter依赖
+4. setMethodCalls(array $methodCalls) 批量指出所有setter依赖，同样会覆盖已有的定义
 
 推荐使用类名做绑定标记，但如果类名过长，则可以给该类名设置别名，这样通过别名和类名都可以获取该类的实例
 

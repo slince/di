@@ -113,7 +113,7 @@ class Container
                 return $this->create($key);
             });
         }
-        $instance = call_user_func($this->_store[$key]['callback']);
+        $instance = call_user_func($this->_store[$key]['callback'], $this);
         if ($this->_store[$key]['shared']) {
             $this->_instances[$key] = $instance;
         }
