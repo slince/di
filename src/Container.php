@@ -108,7 +108,7 @@ class Container
             return $this->_instances[$key];
         }
         if (! isset($this->_store[$key])) {
-            $this->set($key, function () use($key)
+            $this->share($key, function () use($key)
             {
                 return $this->create($key);
             });
