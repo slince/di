@@ -54,7 +54,7 @@ $instance = $di->get('Reader');
 //结果 bool(true)
 var_dump($instance instanceof Reader);
 ```
-自动获取可以解决简单的实例依赖关系，但如果依赖是一个标量并且不是可选的，则无法完成自动注入。此时应选用第三种方法，主动描述一个类。
+自动获取可以解决简单的实例依赖关系，但如果依赖是一个标量并且不是可选的，则无法完成自动注入。
 
 #### 3、描述类
 ```
@@ -85,7 +85,7 @@ $instance = $di->get('Reader');
 //结果 bool(true)
 var_dump($instance instanceof Reader);
 ```
-对于一个依赖较多的类，只需要指出它的标量依赖即可，当然指出全部依赖亦可；如果需要共享，则需要describe提供第二个参数true；以下是常用的指出依赖的方法:
+对于一个依赖较多的类，只需要指出它的标量依赖即可，当然指出全部依赖亦可；如果需要共享则提供第二个参数true；以下是常用的指出依赖的方法:
 ```
 1. setArgument($index, $value) //指出构造依赖. 
 2. setArguments(array $arguments) //批量指出所有依赖，会覆盖已有的定义
