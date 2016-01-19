@@ -56,6 +56,7 @@ var_dump($instance instanceof Reader);
 ```
 自动获取可以解决简单的实例依赖关系，但如果依赖是一个标量并且不是可选的，则无法完成自动注入。
 
+
 #### 3、描述类
 ```
 class Reader 
