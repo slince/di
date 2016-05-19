@@ -1,101 +1,64 @@
 <?php
-include __DIR__ . '/classes.php';
+namespace Slince\Di\Tests;
 
 use Slince\Di\Container;
 use Slince\Di\Definition;
+use Slince\Di\Tests\TestClass\Director;
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
 
-    private $_container;
+    /**
+     * @var Container
+     */
+    protected $container;
 
     function setUp()
     {
-        $this->_container = new Container();
+        $this->container = new Container();
     }
 
-    function tearDown()
+    function testCreate()
     {
-        unset($this->_container);
-    }
-
-    function testSetInstance()
-    {
-        $instance = new ClassA();
-        $this->_container->set('ClassA', $instance);
-        $_instance = $this->_container->get('ClassA');
-        $this->assertInstanceOf('ClassA', $_instance);
-        $this->assertEquals($instance, $_instance);
-    }
-
-    function testSetCallback()
-    {
-        $this->_container->set('ClassA', function ()
-        {
-            return new ClassA();
-        });
-        $instance = $this->_container->get('ClassA');
-        $this->assertInstanceOf('ClassA', $instance);
-    }
-    
-    function testSetNewInstance()
-    {
-        $this->_container->set('ClassC', function (){
-            return $this->_container->create('ClassC');
-        });
-        $instance = $this->_container->get('ClassC');
-        $this->assertInstanceOf('ClassC', $instance);
-    }
-    
-    function testAutoGet()
-    {
-        $instance = $this->_container->get('ClassC');
-        $this->assertInstanceOf('ClassC', $instance);
-    }
-    
-    function testDefinition()
-    {
-        $this->_container->setDefinition('classd', new Definition(
-            'ClassD',
-            [],
-            ['setStr2' => ['world']]
-        ));
-        $instance = $this->_container->get('classd');
-        $this->assertNotEmpty($instance->echoStr());
-        $this->assertInstanceOf('ClassD', $instance);
-    }
-    
-    function testException()
-    {
-        $this->setExpectedException('Slince\Di\Exception\DependencyInjectionException');
-        $arr = $this->_container->setDefinition('ClassD', new Definition('ClassD'))
-           ->setMethodCall('setStr3', ['world'])
-            ->getMethodCalls();
-        $instance = $this->_container->get('ClassD');
-    }
-
-    function testShare()
-    {
-        $this->_container->share('ClassA', function ()
-        {
-            return new ClassA();
-        });
-        $instance = $this->_container->get('ClassA');
-        $instance2 = $this->_container->get('ClassA');
-        $this->assertInstanceOf('ClassA', $instance);
-        $this->assertInstanceOf('ClassA', $instance2);
-        $this->assertEquals($instance, $instance2);
+        $class = '\Slince\Di\Tests\TestClass\Director';
+        $this->assertInstanceOf($class, $this->container->create($class, ['ZhangSan', 26]));
     }
 
     function testAlias()
     {
-        $this->_container->set('ClassA', function ()
-        {
-            return new ClassA();
+        $class = '\Slince\Di\Tests\TestClass\Movie';
+        $this->container->alias('movie', $class);
+        $this->assertInstanceOf($class, $this->container->get('movie'));
+    }
+
+    function testSet()
+    {
+        $this->container->set('director', function(){
+            return new Director('张三', 26);
         });
-        $this->_container->alias('aliasA', 'ClassA');
-        $instance = $this->_container->get('ClassA');
-        $instance2 = $this->_container->get('aliasA');
-        $this->assertEquals($instance, $instance2);
+        $this->assertInstanceOf('\Slince\Di\Tests\TestClass\Director', $this->container->get('director'));
+    }
+
+    function testShare()
+    {
+        $this->container->set('director', function(){
+            return new Director('张三', 26);
+        });
+        $this->assertFalse($this->container->get('director') === $this->container->get('director'));
+        $this->container->share('director', function(){
+            return new Director('张三', 26);
+        });
+        $this->assertTrue($this->container->get('director') === $this->container->get('director'));
+    }
+
+    function testSimpleGet()
+    {
+        $class = '\Slince\Di\Tests\TestClass\Movie';
+        $this->assertInstanceOf($class, $this->container->get($class));
+    }
+
+    function testGetWithDefinition()
+    {
+        $this->container->setDefinition('', new Definition());
     }
 }

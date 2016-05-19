@@ -15,42 +15,41 @@ class Container
      *
      * @var array
      */
-    private $_aliases = [];
+    protected $aliases = [];
 
     /**
      * 实例数组
      *
      * @var array
      */
-    private $_instances = [];
+    protected $instances = [];
 
     /**
      * 实例创建关系数组
      *
      * @var array
      */
-    private $_store = [];
+    protected $store = [];
 
     /**
      * 设置一个建造关系
      *
      * @param string $key            
      * @param object|\Closure $create            
-     * @param boolean $shared            
+     * @param boolean $share            
      * @return Container
      */
-    function set($key, $create, $shared = false)
+    function set($key, $create, $share = false)
     {
-        $callback = '';
         if (! $create instanceof \Closure) {
             $create = function () use ($create)
             {
                 return $create;
             };
         }
-        $this->_store[$key] = [
+        $this->store[$key] = [
             'callback' => $create,
-            'shared' => $shared
+            'share' => $share
         ];
         return $this;
     }
@@ -60,16 +59,16 @@ class Container
      *
      * @param string $key
      * @param Definition $definition
-     * @param boolean $shared
+     * @param boolean $share
      * @return Definition
      */
-    function setDefinition($key, Definition $definition, $shared = false)
+    function setDefinition($key, Definition $definition, $share = false)
     {
         $callback = function () use ($definition)
         {
             return $this->createFromDefinition($definition);
         };
-        $this->set($key, $callback, $shared);
+        $this->set($key, $callback, $share);
         return $definition;
     }
     
@@ -92,7 +91,7 @@ class Container
      */
     function alias($alias, $key)
     {
-        $this->_aliases[$alias] = $key;
+        $this->aliases[$alias] = $key;
     }
 
     /**
@@ -103,19 +102,19 @@ class Container
      */
     function get($key)
     {
-        $key = $this->_getKey($key);
-        if (isset($this->_instances[$key])) {
-            return $this->_instances[$key];
+        $key = $this->getKey($key);
+        if (isset($this->instances[$key])) {
+            return $this->instances[$key];
         }
-        if (! isset($this->_store[$key])) {
+        if (! isset($this->store[$key])) {
             $this->share($key, function () use($key)
             {
                 return $this->create($key);
             });
         }
-        $instance = call_user_func($this->_store[$key]['callback'], $this);
-        if ($this->_store[$key]['shared']) {
-            $this->_instances[$key] = $instance;
+        $instance = call_user_func($this->store[$key]['callback'], $this);
+        if ($this->store[$key]['share']) {
+            $this->instances[$key] = $instance;
         }
         return $instance;
     }
@@ -123,20 +122,22 @@ class Container
     /**
      * 自动获取实例并解决简单的依赖关系
      *
-     * @param string $className            
+     * @param string $className
+     * @param array $arguments
      * @throws DependencyInjectionException
      * @return object
      */
     function create($className, $arguments = [])
     {
-        $reflection = $this->_reflectClass($className);
+        $reflection = $this->reflectClass($className);
         $constructor = $reflection->getConstructor();
         if (! is_null($constructor)) {
-            $constructorArgs = $this->_resolveConstructArguments($constructor, $arguments);
-            return $reflection->newInstanceArgs($constructorArgs);
+            $constructorArgs = $this->resolveConstructArguments($constructor, $arguments);
+            $instance = $reflection->newInstanceArgs($constructorArgs);
         } else {
-            return $reflection->newInstanceWithoutConstructor();
+            $instance = $reflection->newInstanceWithoutConstructor();
         }
+        return $instance;
     }
     
     /**
@@ -149,10 +150,10 @@ class Container
     function createFromDefinition(Definition $definition)
     {
         $arguments = $definition->getArguments();
-        $reflection = $this->_reflectClass($definition->getClassName());
+        $reflection = $this->reflectClass($definition->getClassName());
         $constructor = $reflection->getConstructor();
         if (! is_null($constructor)) {
-            $constructorArgs = $this->_resolveConstructArguments($constructor, $arguments);
+            $constructorArgs = $this->resolveConstructArguments($constructor, $arguments);
             $instance = $reflection->newInstanceArgs($constructorArgs);
         } else {
             $instance = $reflection->newInstanceWithoutConstructor();
@@ -172,26 +173,26 @@ class Container
     /**
      * 处理构造方法所需要的参数
      * @param \ReflectionMethod $constructor
-     * @param array $params
+     * @param array $parameters
      * @throws DependencyInjectionException
      * @return array
      */
-    protected function _resolveConstructArguments(\ReflectionMethod $constructor, array $params)
+    protected function resolveConstructArguments(\ReflectionMethod $constructor, array $parameters)
     {
         $constructorArgs = [];
-        foreach ($constructor->getParameters() as $param) {
-            $varIndex = $param->getPosition();
+        foreach ($constructor->getParameters() as $parameter) {
+            $index = $parameter->getPosition();
             // 如果定义过依赖 则直接获取
-            if (isset($params[$varIndex])) {
-                $constructorArgs[] = $params[$varIndex];
-            } elseif ($param instanceof DependencyInterface) {
-                $constructorArgs[] = $param->getDependency();
-            } elseif (($dependency = $param->getClass()) != null) {
+            if (isset($parameters[$index])) {
+                $constructorArgs[] = $parameters[$index];
+            } elseif ($parameter instanceof DependencyInterface) {
+                $constructorArgs[] = $parameter->getDependency();
+            } elseif (($dependency = $parameter->getClass()) != null) {
                 $constructorArgs[] = $this->get($dependency->getName());
-            } elseif ($param->isOptional()) {
-                $constructorArgs[] = $param->getDefaultValue();
+            } elseif ($parameter->isOptional()) {
+                $constructorArgs[] = $parameter->getDefaultValue();
             } else {
-                throw new DependencyInjectionException(sprintf('Param "%s" must be provided', $varName));
+                throw new DependencyInjectionException(sprintf('Parameter "%s" must be provided', $parameter->getName()));
             }
         }
         return $constructorArgs;
@@ -204,7 +205,7 @@ class Container
      * @throws DependencyInjectionException
      * @return \ReflectionClass
      */
-    protected function _reflectClass($className)
+    protected function reflectClass($className)
     {
         try {
             $reflection = new \ReflectionClass($className);
@@ -220,8 +221,8 @@ class Container
      * @param string $key            
      * @return string
      */
-    protected function _getKey($key)
+    protected function getKey($key)
     {
-        return isset($this->_aliases[$key]) ? $this->_aliases[$key] : $key;
+        return isset($this->aliases[$key]) ? $this->aliases[$key] : $key;
     }
 }

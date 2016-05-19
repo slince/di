@@ -15,27 +15,27 @@ class Definition
      *
      * @var string
      */
-    private $_className;
+    private $className;
 
     /**
      * 构造参数
      *
      * @var array
      */
-    private $_arguments = [];
+    private $arguments = [];
 
     /**
      * setter函数
      *
      * @var array
      */
-    private $_methodCalls = [];
+    private $methodCalls = [];
 
     function __construct($className, $arguments = [], $methodCalls = [])
     {
-        $this->_className = $className;
-        $this->_arguments = $arguments;
-        $this->_methodCalls = $methodCalls;
+        $this->className = $className;
+        $this->arguments = $arguments;
+        $this->methodCalls = $methodCalls;
     }
 
     /**
@@ -46,7 +46,7 @@ class Definition
      */
     function setArgument($index, $value)
     {
-        $this->_arguments[$index] = $arg;
+        $this->arguments[$index] = $arg;
         return $this;
     }
 
@@ -57,7 +57,7 @@ class Definition
      */
     function setArguments(array $arguments)
     {
-        $this->_arguments = $arguments;
+        $this->arguments = $arguments;
         return $this;
     }
 
@@ -68,7 +68,7 @@ class Definition
      */
     function getArguments()
     {
-        return $this->_arguments;
+        return $this->arguments;
     }
 
     /**
@@ -79,7 +79,7 @@ class Definition
      */
     function getArgument($index)
     {
-        return isset($this->_arguments[$index]) ? $this->_arguments[$index] : null;
+        return isset($this->arguments[$index]) ? $this->arguments[$index] : null;
     }
 
     /**
@@ -90,7 +90,7 @@ class Definition
      */
     function setMethodCall($method, array $arguments)
     {
-        $this->_methodCalls[$method] = $arguments;
+        $this->methodCalls[$method] = $arguments;
         return $this;
     }
 
@@ -101,7 +101,7 @@ class Definition
      */
     function setMethodCalls(array $methodCalls)
     {
-        $this->_methodCalls = array_merge($this->_methodCalls, $methodCalls);
+        $this->methodCalls = array_merge($this->methodCalls, $methodCalls);
         return $this;
     }
 
@@ -112,7 +112,7 @@ class Definition
      */
     function getMethodCalls()
     {
-        return $this->_methodCalls;
+        return $this->methodCalls;
     }
 
     /**
@@ -123,7 +123,7 @@ class Definition
      */
     function getMethodCall($method)
     {
-        return isset($this->_methodCalls[$method]) ? $this->_methodCalls[$method] : null;
+        return isset($this->methodCalls[$method]) ? $this->methodCalls[$method] : null;
     }
 
     /**
@@ -133,6 +133,6 @@ class Definition
      */
     function getClassName()
     {
-        return $this->_className;
+        return $this->className;
     }
 }

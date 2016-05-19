@@ -12,19 +12,19 @@ class ServiceDependency implements DependencyInterface
      * 服务名
      * @var string
      */
-    private $_name = '';
+    private $name = '';
 
     /**
      * di容器
      * 
      * @var Container
      */
-    private $_container;
+    private $container;
 
     function __construct($name, $container)
     {
-        $this->_name = $name;
-        $this->_container = $container;
+        $this->name = $name;
+        $this->container = $container;
     }
 
     /**
@@ -32,7 +32,7 @@ class ServiceDependency implements DependencyInterface
      */
     function getContainer()
     {
-        return $this->_container;
+        return $this->container;
     }
 
     /**
@@ -40,7 +40,7 @@ class ServiceDependency implements DependencyInterface
      */
     function setContainer(Container $container)
     {
-        $this->_container = $container;
+        $this->container = $container;
     }
 
     /**
@@ -50,7 +50,7 @@ class ServiceDependency implements DependencyInterface
      */
     function getName()
     {
-        return $this->_name;
+        return $this->name;
     }
 
     /**
@@ -60,7 +60,7 @@ class ServiceDependency implements DependencyInterface
      */
     function setName($name)
     {
-        $this->_name = $name;
+        $this->name = $name;
     }
 
     /**
@@ -68,6 +68,6 @@ class ServiceDependency implements DependencyInterface
      */
     function getDependency()
     {
-        return $this->_container->get($this->_name);
+        return $this->container->get($this->name);
     }
 }
