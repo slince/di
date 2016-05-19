@@ -3,6 +3,7 @@ namespace Slince\Di\Tests;
 
 use Slince\Di\Container;
 use Slince\Di\Definition;
+use Slince\Di\ServiceDependency;
 use Slince\Di\Tests\TestClass\Director;
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
@@ -59,6 +60,20 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
 
     function testGetWithDefinition()
     {
-        $this->container->setDefinition('', new Definition());
+        $class = '\Slince\Di\Tests\TestClass\Director';
+        $this->container->setDefinition('director', new Definition($class, ['LieJie', 16]));
+        $this->assertInstanceOf($class, $this->container->get('director'));
     }
+
+    function testGetWithDefinitionDependency()
+    {
+        $directorClass = '\Slince\Di\Tests\TestClass\Director';
+        $movieClass = '\Slince\Di\Tests\TestClass\Movie';
+        $this->container->setDefinition('director', new Definition($directorClass, ['LieJie', 16]));
+        $this->container->setDefinition('movie', new Definition($movieClass, [
+            new ServiceDependency('director', $this->container)
+        ]));
+        $this->assertInstanceOf($movieClass, $this->container->get('movie'));
+    }
+
 }

@@ -5,8 +5,6 @@
  */
 namespace Slince\Di;
 
-use Slince\Di\Exception\DependencyInjectionException;
-
 class Definition
 {
 
@@ -15,21 +13,21 @@ class Definition
      *
      * @var string
      */
-    private $className;
+    protected $className;
 
     /**
      * 构造参数
      *
      * @var array
      */
-    private $arguments = [];
+    protected $arguments = [];
 
     /**
      * setter函数
      *
      * @var array
      */
-    private $methodCalls = [];
+    protected $methodCalls = [];
 
     function __construct($className, $arguments = [], $methodCalls = [])
     {
@@ -40,20 +38,21 @@ class Definition
 
     /**
      * 设置一个构造参数
-     *
-     * @param int $index            
-     * @param mixed $arg            
+     * @param int $index
+     * @param mixed $argument
+     * @return $this
      */
-    function setArgument($index, $value)
+    function setArgument($index, $argument)
     {
-        $this->arguments[$index] = $arg;
+        $this->arguments[$index] = $argument;
         return $this;
     }
 
+
     /**
      * 批量设置构造参数
-     *
-     * @param array $arguments            
+     * @param array $arguments
+     * @return $this
      */
     function setArguments(array $arguments)
     {
@@ -63,7 +62,6 @@ class Definition
 
     /**
      * 获取所有的构造参数
-     *
      * @return array
      */
     function getArguments()
@@ -73,8 +71,7 @@ class Definition
 
     /**
      * 获取指定次序上的参数
-     * 
-     * @param int $index            
+     * @param int $index
      * @return mixed
      */
     function getArgument($index)
@@ -84,9 +81,9 @@ class Definition
 
     /**
      * 设置一个setter函数
-     *
-     * @param string $method            
-     * @param mixed $value            
+     * @param string $method
+     * @param array $arguments
+     * @return $this
      */
     function setMethodCall($method, array $arguments)
     {
@@ -96,8 +93,8 @@ class Definition
 
     /**
      * 批量设置构造参数
-     *
-     * @param array $methodCalls            
+     * @param array $methodCalls
+     * @return $this
      */
     function setMethodCalls(array $methodCalls)
     {
@@ -107,7 +104,6 @@ class Definition
 
     /**
      * 获取setter函数
-     *
      * @return array
      */
     function getMethodCalls()
@@ -117,8 +113,8 @@ class Definition
 
     /**
      * 获取指定函数名下的参数
-     * 
-     * @param string $method            
+     *
+     * @param string $method
      * @return array|null
      */
     function getMethodCall($method)
@@ -128,7 +124,6 @@ class Definition
 
     /**
      * 获取当前类名
-     *
      * @return string
      */
     function getClassName()

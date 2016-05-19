@@ -12,5 +12,4 @@ interface DependencyInterface
      * 获取依赖
      */
     function getDependency();
-    
 }

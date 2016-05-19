@@ -12,11 +12,11 @@ class ServiceDependency implements DependencyInterface
      * 服务名
      * @var string
      */
-    private $name = '';
+    protected $name = '';
 
     /**
      * di容器
-     * 
+     *
      * @var Container
      */
     private $container;
@@ -37,6 +37,7 @@ class ServiceDependency implements DependencyInterface
 
     /**
      * 设置容器
+     * @param Container $container
      */
     function setContainer(Container $container)
     {
@@ -45,7 +46,6 @@ class ServiceDependency implements DependencyInterface
 
     /**
      * 获取服务名
-     * 
      * @return string
      */
     function getName()
@@ -55,8 +55,8 @@ class ServiceDependency implements DependencyInterface
 
     /**
      * 设置服务名
-     * 
-     * @param string $name            
+     *
+     * @param string $name
      */
     function setName($name)
     {

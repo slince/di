@@ -1,5 +1,11 @@
 ﻿# Dependency injection component
 
+[![Build Status](https://travis-ci.org/slince/di.svg?branch=master)](https://travis-ci.org/slince/di)
+[![Latest Stable Version](https://poser.pugx.org/slince/di/v/stable)](https://packagist.org/packages/slince/di)
+[![Total Downloads](https://poser.pugx.org/slince/di/downloads)](https://packagist.org/packages/slince/di)
+[![Latest Unstable Version](https://poser.pugx.org/slince/di/v/unstable)](https://packagist.org/packages/slince/di)
+[![License](https://poser.pugx.org/slince/di/license)](https://packagist.org/packages/slince/di)
+
 这是一个依赖注入组件，通过简单的实现即可让类的实例化过程变得简单；
 
 ### 安装
@@ -18,11 +24,10 @@
 
 #### 1、通过实例绑定
 ```
-class Reader {
+class Reader
+{
     function read()
-    {
-        //To do
-    } 
+    {}
 }
 
 $di = new Slince\Di\Container();
@@ -39,10 +44,11 @@ var_dump($instance instanceof Reader);
 ```
 class Reader 
 {
-    private $_reader; 
+    private $reader;
+
     function __construct(PdfReader $reader)
     {
-        $this->_reader = $reader;
+        $this->reader = $reader;
     } 
 }
 class PdfReader
@@ -61,22 +67,21 @@ var_dump($instance instanceof Reader);
 ```
 class Reader 
 {
-    private $_reader;
-    private $_file;
-    private $_mod;
+    private $reader;
+    private $file;
+    private $mode;
     function __construct(PdfReader $reader, $file)
     {
-        $this->_reader = $reader;
-        $this->_file = $file;
+        $this->reader = $reader;
+        $this->file = $file;
     }
-    function setMod($mod)
+    function setMode($mode)
     {
-   	    $this->_mode = $mod;
+        $this->mode = $mode;
     }
 }
 class PdfReader
-{
-}
+{}
 
 $di = new Slince\Di\Container();
 //描述
@@ -85,6 +90,7 @@ $di->setDefinition('Reader', new Definition('Reader')->setArgument(1, 'C:/a.pdf'
 $instance = $di->get('Reader');
 //结果 bool(true)
 var_dump($instance instanceof Reader);
+
 ```
 对于一个依赖较多的类，只需要指出它的标量依赖即可，当然指出全部依赖亦可；如果需要共享则提供第二个参数true；以下是常用的指出依赖的方法:
 ```
@@ -102,7 +108,7 @@ class Reader
 {
     function read()
     {
-   	    echo 'reading';
+        echo 'reading';
     }
 }
 
