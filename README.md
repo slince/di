@@ -1,4 +1,4 @@
-﻿# Dependency injection component
+﻿# Dependency Injection Component
 
 [![Build Status](https://travis-ci.org/slince/di.svg?branch=master)](https://travis-ci.org/slince/di)
 [![Latest Stable Version](https://poser.pugx.org/slince/di/v/stable)](https://packagist.org/packages/slince/di)
