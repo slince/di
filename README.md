@@ -14,7 +14,7 @@
 ```
 {
     "require": {
-        "slince/di": "dev-master@dev"
+        "slince/di": "*"
     }
 }
 ```
