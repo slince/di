@@ -9,7 +9,7 @@ class Movie
 
     protected $director;
 
-    function __construct(Director $director)
+    public function __construct(Director $director)
     {
         $this->director = $director;
     }

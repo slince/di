@@ -12,14 +12,14 @@ class DefinitionTest extends \PHPUnit_Framework_TestCase
         return new Definition($className, $arguments, $methodCalls);
     }
     
-    function testSetAndGetArgument()
+    public function testSetAndGetArgument()
     {
         $definition = $this->createDefinition($this->class);
         $definition->setArgument(0, 'LiAn');
         $this->assertEquals('LiAn', $definition->getArgument(0));
     }
 
-    function testSetAndGetArguments()
+    public function testSetAndGetArguments()
     {
         $definition = $this->createDefinition($this->class);
         $arguments = ['Jumi', 12];
@@ -27,14 +27,14 @@ class DefinitionTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($arguments, $definition->getArguments());
     }
 
-    function testSetAndGetMethodCall()
+    public function testSetAndGetMethodCall()
     {
         $definition = $this->createDefinition($this->class);
         $definition->setMethodCall('setName', ['LiAn']);
         $this->assertEquals(['LiAn'], $definition->getMethodCall('setName'));
     }
 
-    function testSetAndGetMethodCalls()
+    public function testSetAndGetMethodCalls()
     {
         $definition = $this->createDefinition($this->class);
         $methodCalls = [

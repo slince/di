@@ -26,7 +26,7 @@
 ```
 class Reader
 {
-    function read()
+    public function read()
     {}
 }
 
@@ -46,7 +46,7 @@ class Reader
 {
     private $reader;
 
-    function __construct(PdfReader $reader)
+    public function __construct(PdfReader $reader)
     {
         $this->reader = $reader;
     } 
@@ -70,12 +70,12 @@ class Reader
     private $reader;
     private $file;
     private $mode;
-    function __construct(PdfReader $reader, $file)
+    public function __construct(PdfReader $reader, $file)
     {
         $this->reader = $reader;
         $this->file = $file;
     }
-    function setMode($mode)
+    public function setMode($mode)
     {
         $this->mode = $mode;
     }
@@ -106,7 +106,7 @@ namespace I\Like\Read\Book;
 
 class Reader 
 {
-    function read()
+    public function read()
     {
         echo 'reading';
     }

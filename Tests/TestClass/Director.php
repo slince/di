@@ -7,7 +7,7 @@ class Director
 
     protected $age;
 
-    function __construct($name = '', $age = 0)
+    public function __construct($name = '', $age = 0)
     {
         $this->name = $name;
         $this->age = $age;
@@ -45,7 +45,7 @@ class Director
         $this->age = $age;
     }
 
-    function direct($movieName)
+    public function direct($movieName)
     {
         return new Movie($this, $movieName, date('Y-m-d'));
     }

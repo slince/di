@@ -21,7 +21,7 @@ class ServiceDependency implements DependencyInterface
      */
     private $container;
 
-    function __construct($name, $container)
+    public function __construct($name, $container)
     {
         $this->name = $name;
         $this->container = $container;
@@ -30,7 +30,7 @@ class ServiceDependency implements DependencyInterface
     /**
      * 获取依赖容器
      */
-    function getContainer()
+    public function getContainer()
     {
         return $this->container;
     }
@@ -39,7 +39,7 @@ class ServiceDependency implements DependencyInterface
      * 设置容器
      * @param Container $container
      */
-    function setContainer(Container $container)
+    public function setContainer(Container $container)
     {
         $this->container = $container;
     }
@@ -48,7 +48,7 @@ class ServiceDependency implements DependencyInterface
      * 获取服务名
      * @return string
      */
-    function getName()
+    public function getName()
     {
         return $this->name;
     }
@@ -58,7 +58,7 @@ class ServiceDependency implements DependencyInterface
      *
      * @param string $name
      */
-    function setName($name)
+    public function setName($name)
     {
         $this->name = $name;
     }
@@ -66,7 +66,7 @@ class ServiceDependency implements DependencyInterface
     /**
      * 获取依赖
      */
-    function getDependency()
+    public function getDependency()
     {
         return $this->container->get($this->name);
     }

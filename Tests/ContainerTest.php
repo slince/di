@@ -14,58 +14,58 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
      */
     protected $container;
 
-    function setUp()
+    public function setUp()
     {
         $this->container = new Container();
     }
 
-    function testCreate()
+    public function testCreate()
     {
         $class = '\Slince\Di\Tests\TestClass\Director';
         $this->assertInstanceOf($class, $this->container->create($class, ['ZhangSan', 26]));
     }
 
-    function testAlias()
+    public function testAlias()
     {
         $class = '\Slince\Di\Tests\TestClass\Movie';
         $this->container->alias('movie', $class);
         $this->assertInstanceOf($class, $this->container->get('movie'));
     }
 
-    function testSet()
+    public function testSet()
     {
-        $this->container->set('director', function(){
+        $this->container->set('director', function () {
             return new Director('张三', 26);
         });
         $this->assertInstanceOf('\Slince\Di\Tests\TestClass\Director', $this->container->get('director'));
     }
 
-    function testShare()
+    public function testShare()
     {
-        $this->container->set('director', function(){
+        $this->container->set('director', function () {
             return new Director('张三', 26);
         });
         $this->assertFalse($this->container->get('director') === $this->container->get('director'));
-        $this->container->share('director', function(){
+        $this->container->share('director', function () {
             return new Director('张三', 26);
         });
         $this->assertTrue($this->container->get('director') === $this->container->get('director'));
     }
 
-    function testSimpleGet()
+    public function testSimpleGet()
     {
         $class = '\Slince\Di\Tests\TestClass\Movie';
         $this->assertInstanceOf($class, $this->container->get($class));
     }
 
-    function testGetWithDefinition()
+    public function testGetWithDefinition()
     {
         $class = '\Slince\Di\Tests\TestClass\Director';
         $this->container->setDefinition('director', new Definition($class, ['LieJie', 16]));
         $this->assertInstanceOf($class, $this->container->get('director'));
     }
 
-    function testGetWithDefinitionDependency()
+    public function testGetWithDefinitionDependency()
     {
         $directorClass = '\Slince\Di\Tests\TestClass\Director';
         $movieClass = '\Slince\Di\Tests\TestClass\Movie';
@@ -75,5 +75,4 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         ]));
         $this->assertInstanceOf($movieClass, $this->container->get('movie'));
     }
-
 }

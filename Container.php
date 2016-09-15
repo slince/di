@@ -39,7 +39,7 @@ class Container
      * @param boolean $share
      * @return Container
      */
-    function set($key, $create, $share = false)
+    public function set($key, $create, $share = false)
     {
         if (!$create instanceof \Closure) {
             $create = function () use ($create) {
@@ -61,7 +61,7 @@ class Container
      * @param boolean $share
      * @return Definition
      */
-    function setDefinition($key, Definition $definition, $share = false)
+    public function setDefinition($key, Definition $definition, $share = false)
     {
         $callback = function () use ($definition) {
             return $this->createFromDefinition($definition);
@@ -76,7 +76,7 @@ class Container
      * @param string $key
      * @param object|\Closure $create
      */
-    function share($key, $create)
+    public function share($key, $create)
     {
         $this->set($key, $create, true);
     }
@@ -87,7 +87,7 @@ class Container
      * @param string $alias
      * @param string $key
      */
-    function alias($alias, $key)
+    public function alias($alias, $key)
     {
         $this->aliases[$alias] = $key;
     }
@@ -98,7 +98,7 @@ class Container
      * @param string $key
      * @return object
      */
-    function get($key)
+    public function get($key)
     {
         $key = $this->getKey($key);
         if (isset($this->instances[$key])) {
@@ -124,7 +124,7 @@ class Container
      * @throws DependencyInjectionException
      * @return object
      */
-    function create($className, $arguments = [])
+    public function create($className, $arguments = [])
     {
         $reflection = $this->reflectClass($className);
         $constructor = $reflection->getConstructor();
@@ -144,7 +144,7 @@ class Container
      * @throws DependencyInjectionException
      * @return object
      */
-    function createFromDefinition(Definition $definition)
+    public function createFromDefinition(Definition $definition)
     {
         $arguments = $definition->getArguments();
         $reflection = $this->reflectClass($definition->getClassName());
@@ -160,8 +160,11 @@ class Container
             try {
                 $methodReflection = $reflection->getMethod($method);
             } catch (\ReflectionException $e) {
-                throw new DependencyInjectionException(sprintf('Class "%s" don\'t have method "%s"',
-                    $definition->getClassName(), $method));
+                throw new DependencyInjectionException(sprintf(
+                    'Class "%s" don\'t have method "%s"',
+                    $definition->getClassName(),
+                    $method
+                ));
             }
             $methodReflection->invokeArgs($instance, $methodArguments);
         }
@@ -192,8 +195,10 @@ class Container
             } elseif ($parameter->isOptional()) {
                 $constructorArgs[] = $parameter->getDefaultValue();
             } else {
-                throw new DependencyInjectionException(sprintf('Parameter "%s" must be provided',
-                    $parameter->getName()));
+                throw new DependencyInjectionException(sprintf(
+                    'Parameter "%s" must be provided',
+                    $parameter->getName()
+                ));
             }
         }
         return $constructorArgs;
