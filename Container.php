@@ -12,28 +12,35 @@ class Container
 
     /**
      * 别名数组
-     *
      * @var array
      */
     protected $aliases = [];
 
     /**
      * 实例数组
-     *
      * @var array
      */
     protected $instances = [];
 
     /**
      * 实例创建关系数组
-     *
      * @var array
      */
     protected $store = [];
 
     /**
+     * 参数集合
+     * @var \ArrayObject
+     */
+    protected $parameters;
+
+    public function __construct()
+    {
+        $this->parameters = new \ArrayObject();
+    }
+
+    /**
      * 设置一个建造关系
-     *
      * @param string $key
      * @param object|\Closure $create
      * @param boolean $share
@@ -55,7 +62,6 @@ class Container
 
     /**
      * 如果不能简单获取，则使用设置定义的方式
-     *
      * @param string $key
      * @param Definition $definition
      * @param boolean $share
@@ -72,7 +78,6 @@ class Container
 
     /**
      * 设置一个共享关系
-     *
      * @param string $key
      * @param object|\Closure $create
      */
@@ -83,7 +88,6 @@ class Container
 
     /**
      * 设置一个别名
-     *
      * @param string $alias
      * @param string $key
      */
@@ -94,7 +98,6 @@ class Container
 
     /**
      * 获取一个实例
-     *
      * @param string $key
      * @return object
      */
@@ -118,7 +121,6 @@ class Container
 
     /**
      * 自动获取实例并解决简单的依赖关系
-     *
      * @param string $className
      * @param array $arguments
      * @throws DependencyInjectionException
@@ -139,7 +141,6 @@ class Container
 
     /**
      * 根据definition创建实例
-     *
      * @param Definition $definition
      * @throws DependencyInjectionException
      * @return object
@@ -206,7 +207,6 @@ class Container
 
     /**
      * 获取类的反射对象
-     *
      * @param string $className
      * @throws DependencyInjectionException
      * @return \ReflectionClass
@@ -223,7 +223,6 @@ class Container
 
     /**
      * 处理alias
-     *
      * @param string $key
      * @return string
      */
