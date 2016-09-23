@@ -97,7 +97,7 @@ class Container
      */
     public function get($key)
     {
-        $key = $this->getKey($key);
+        $key = $this->getRealKey($key);
         if (isset($this->instances[$key])) {
             return $this->instances[$key];
         }
@@ -125,7 +125,7 @@ class Container
         $reflection = $this->reflectClass($className);
         $constructor = $reflection->getConstructor();
         if (!is_null($constructor)) {
-            $constructorArgs = $this->resolveConstructArguments($constructor, $arguments);
+            $constructorArgs = $this->resolveConstructArguments($constructor, $this->resolveParameters($arguments));
             $instance = $reflection->newInstanceArgs($constructorArgs);
         } else {
             $instance = $reflection->newInstanceWithoutConstructor();
@@ -164,6 +164,44 @@ class Container
             $methodReflection->invokeArgs($instance, $this->resolveParameters($methodArguments));
         }
         return $instance;
+    }
+
+    /**
+     * 获取所有预定义参数
+     * @return array
+     */
+    public function getParameters()
+    {
+        return $this->parameters;
+    }
+
+    /**
+     * 设置预定义参数
+     * @param array $parameters
+     */
+    public function setParameters(array $parameters)
+    {
+        $this->parameters = $parameters;
+    }
+
+    /**
+     * 添加预定义参数
+     * @param array $parameters
+     */
+    public function addParameters(array $parameters)
+    {
+        $this->parameters += $parameters;
+    }
+
+    /**
+     * 获取参数
+     * @param $name
+     * @param null $default
+     * @return mixed|null
+     */
+    public function getParameter($name, $default = null)
+    {
+        return isset($this->parameters[$name]) ? $this->parameters[$name] : $default;
     }
 
     /**
@@ -221,63 +259,6 @@ class Container
     }
 
     /**
-     * 获取所有预定义参数
-     * @return array
-     */
-    public function getParameters()
-    {
-        return $this->parameters;
-    }
-
-    /**
-     * 设置预定义参数
-     * @param array $parameters
-     */
-    public function setParameters(array $parameters)
-    {
-        $this->parameters = $parameters;
-    }
-
-    /**
-     * 添加预定义参数
-     * @param array $parameters
-     */
-    public function addParameters(array $parameters)
-    {
-        $this->parameters += $parameters;
-    }
-
-    /**
-     * 获取参数
-     * @param $name
-     * @param null $default
-     * @return mixed|null
-     */
-    public function getParameter($name, $default = null)
-    {
-        return isset($this->parameters[$name]) ? $this->parameters[$name] : $default;
-    }
-
-    /**
-     * 处理参数
-     * @param $parameter
-     * @return mixed
-     */
-    protected function handleParameter($parameter)
-    {
-        if (is_string($parameter)) {
-            return preg_replace_callback("#%[^%\s]+%#", function ($matches) {
-                $key = $matches[1];
-                if (isset($this->parameters[$key])) {
-                    return $this->parameters[$key];
-                }
-                throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
-            }, $parameter);
-        }
-        return $parameter;
-    }
-
-    /**
      * 获取类的反射对象
      * @param string $className
      * @throws DependencyInjectionException
@@ -298,7 +279,7 @@ class Container
      * @param string $key
      * @return string
      */
-    protected function getKey($key)
+    protected function getRealKey($key)
     {
         return isset($this->aliases[$key]) ? $this->aliases[$key] : $key;
     }
