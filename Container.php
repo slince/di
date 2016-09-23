@@ -9,7 +9,6 @@ use Slince\Di\Exception\DependencyInjectionException;
 
 class Container
 {
-
     /**
      * 别名数组
      * @var array
@@ -30,14 +29,9 @@ class Container
 
     /**
      * 参数集合
-     * @var \ArrayObject
+     * @var array
      */
     protected $parameters;
-
-    public function __construct()
-    {
-        $this->parameters = new \ArrayObject();
-    }
 
     /**
      * 设置一个建造关系
@@ -151,7 +145,7 @@ class Container
         $reflection = $this->reflectClass($definition->getClassName());
         $constructor = $reflection->getConstructor();
         if (!is_null($constructor)) {
-            $constructorArgs = $this->resolveConstructArguments($constructor, $arguments);
+            $constructorArgs = $this->resolveConstructArguments($constructor, $this->resolveParameters($arguments));
             $instance = $reflection->newInstanceArgs($constructorArgs);
         } else {
             $instance = $reflection->newInstanceWithoutConstructor();
@@ -167,30 +161,51 @@ class Container
                     $method
                 ));
             }
-            $methodReflection->invokeArgs($instance, $methodArguments);
+            $methodReflection->invokeArgs($instance, $this->resolveParameters($methodArguments));
         }
         return $instance;
     }
 
     /**
+     * 预处理参数
+     * @param $parameters
+     * @return array
+     */
+    protected function resolveParameters($parameters)
+    {
+        return array_map(function ($parameter) {
+            //字符类型参数处理下预定义参数的情况
+            if (is_string($parameter)) {
+                $parameter = preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
+                    $key = $matches[1];
+                    if (isset($this->parameters[$key])) {
+                        return $this->parameters[$key];
+                    }
+                    throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
+                }, $parameter);
+            } elseif ($parameter instanceof Reference) { //服务依赖
+                $parameter = $this->get($parameter->getName());
+            }
+            return $parameter;
+        }, $parameters);
+    }
+
+    /**
      * 处理构造方法所需要的参数
      * @param \ReflectionMethod $constructor
-     * @param array $parameters
+     * @param array $arguments
      * @throws DependencyInjectionException
      * @return array
      */
-    protected function resolveConstructArguments(\ReflectionMethod $constructor, array $parameters)
+    protected function resolveConstructArguments(\ReflectionMethod $constructor, array $arguments)
     {
         $constructorArgs = [];
+        $arguments = $this->resolveParameters($arguments);
         foreach ($constructor->getParameters() as $parameter) {
             $index = $parameter->getPosition();
             // 如果定义过依赖 则直接获取
-            if (isset($parameters[$index])) {
-                if ($parameters[$index] instanceof DependencyInterface) {
-                    $constructorArgs[] = $parameters[$index]->getDependency();
-                } else {
-                    $constructorArgs[] = $parameters[$index];
-                }
+            if (isset($arguments[$index])) {
+                $constructorArgs[] = $arguments[$index];
             } elseif (($dependency = $parameter->getClass()) != null) {
                 $constructorArgs[] = $this->get($dependency->getName());
             } elseif ($parameter->isOptional()) {
@@ -203,6 +218,63 @@ class Container
             }
         }
         return $constructorArgs;
+    }
+
+    /**
+     * 获取所有预定义参数
+     * @return array
+     */
+    public function getParameters()
+    {
+        return $this->parameters;
+    }
+
+    /**
+     * 设置预定义参数
+     * @param array $parameters
+     */
+    public function setParameters(array $parameters)
+    {
+        $this->parameters = $parameters;
+    }
+
+    /**
+     * 添加预定义参数
+     * @param array $parameters
+     */
+    public function addParameters(array $parameters)
+    {
+        $this->parameters += $parameters;
+    }
+
+    /**
+     * 获取参数
+     * @param $name
+     * @param null $default
+     * @return mixed|null
+     */
+    public function getParameter($name, $default = null)
+    {
+        return isset($this->parameters[$name]) ? $this->parameters[$name] : $default;
+    }
+
+    /**
+     * 处理参数
+     * @param $parameter
+     * @return mixed
+     */
+    protected function handleParameter($parameter)
+    {
+        if (is_string($parameter)) {
+            return preg_replace_callback("#%[^%\s]+%#", function ($matches) {
+                $key = $matches[1];
+                if (isset($this->parameters[$key])) {
+                    return $this->parameters[$key];
+                }
+                throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
+            }, $parameter);
+        }
+        return $parameter;
     }
 
     /**

@@ -3,16 +3,19 @@ namespace Slince\Di\Tests;
 
 use Slince\Di\Container;
 use Slince\Di\Definition;
-use Slince\Di\ServiceDependency;
+use Slince\Di\Reference;
 use Slince\Di\Tests\TestClass\Director;
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
-
     /**
      * @var Container
      */
     protected $container;
+
+    const DIRECTOR_CLASS = '\Slince\Di\Tests\TestClass\Director';
+
+    const MOVIE_CLASS = '\Slince\Di\Tests\TestClass\Movie';
 
     public function setUp()
     {
@@ -21,15 +24,13 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
 
     public function testCreate()
     {
-        $class = '\Slince\Di\Tests\TestClass\Director';
-        $this->assertInstanceOf($class, $this->container->create($class, ['ZhangSan', 26]));
+        $this->assertInstanceOf(static::DIRECTOR_CLASS, $this->container->create(static::DIRECTOR_CLASS, ['ZhangSan', 26]));
     }
 
     public function testAlias()
     {
-        $class = '\Slince\Di\Tests\TestClass\Movie';
-        $this->container->alias('movie', $class);
-        $this->assertInstanceOf($class, $this->container->get('movie'));
+        $this->container->alias('movie', static::MOVIE_CLASS);
+        $this->assertInstanceOf(static::MOVIE_CLASS, $this->container->get('movie'));
     }
 
     public function testSet()
@@ -37,7 +38,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->container->set('director', function () {
             return new Director('张三', 26);
         });
-        $this->assertInstanceOf('\Slince\Di\Tests\TestClass\Director', $this->container->get('director'));
+        $this->assertInstanceOf(static::DIRECTOR_CLASS, $this->container->get('director'));
     }
 
     public function testShare()
@@ -54,25 +55,50 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
 
     public function testSimpleGet()
     {
-        $class = '\Slince\Di\Tests\TestClass\Movie';
-        $this->assertInstanceOf($class, $this->container->get($class));
+        $this->assertInstanceOf(static::MOVIE_CLASS, $this->container->get(static::MOVIE_CLASS));
     }
 
     public function testGetWithDefinition()
     {
-        $class = '\Slince\Di\Tests\TestClass\Director';
-        $this->container->setDefinition('director', new Definition($class, ['LieJie', 16]));
-        $this->assertInstanceOf($class, $this->container->get('director'));
+        $this->container->setDefinition('director', new Definition(static::DIRECTOR_CLASS, ['LieJie', 16]));
+        $this->assertInstanceOf(static::DIRECTOR_CLASS, $this->container->get('director'));
     }
 
-    public function testGetWithDefinitionDependency()
+    public function testGetWithDefinitionReference()
     {
-        $directorClass = '\Slince\Di\Tests\TestClass\Director';
-        $movieClass = '\Slince\Di\Tests\TestClass\Movie';
-        $this->container->setDefinition('director', new Definition($directorClass, ['LieJie', 16]));
-        $this->container->setDefinition('movie', new Definition($movieClass, [
-            new ServiceDependency('director', $this->container)
+        $this->container->setDefinition('director', new Definition(static::DIRECTOR_CLASS, ['LieJie', 16]));
+        $this->container->setDefinition('movie', new Definition(static::MOVIE_CLASS, [
+            new Reference('director')
         ]));
-        $this->assertInstanceOf($movieClass, $this->container->get('movie'));
+        $this->assertInstanceOf(static::MOVIE_CLASS, $this->container->get('movie'));
+    }
+
+    public function testGetWithArguments()
+    {
+        $this->container->setParameters([
+            'name' => 'LiAn',
+            'age' => 48
+        ]);
+        $this->container->setDefinition('director', new Definition(static::DIRECTOR_CLASS, [
+            '%name%',
+            '%age%'
+        ]));
+        $director = $this->container->get('director');
+        $this->assertEquals('LiAn', $director->getName());
+        $this->assertEquals(48, $director->getAge());
+    }
+
+    public function testGetWithMethodCallArguments()
+    {
+        $this->container->setParameters([
+            'name' => 'LiAn',
+            'age' => 48
+        ]);
+        $this->container->setDefinition('director', new Definition(static::DIRECTOR_CLASS))
+            ->setMethodCall('setName', ['%name%'])
+            ->setMethodCall('setAge', ['%age%']);
+        $director = $this->container->get('director');
+        $this->assertEquals('LiAn', $director->getName());
+        $this->assertEquals(48, $director->getAge());
     }
 }
