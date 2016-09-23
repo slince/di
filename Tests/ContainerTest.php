@@ -51,6 +51,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
             return new Director('张三', 26);
         });
         $this->assertTrue($this->container->get('director') === $this->container->get('director'));
+        $this->assertFalse($this->container->get('director', true) === $this->container->get('director', true));
     }
 
     public function testSimpleGet()
@@ -71,6 +72,20 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
             new Reference('director')
         ]));
         $this->assertInstanceOf(static::MOVIE_CLASS, $this->container->get('movie'));
+    }
+
+    public function testParameters()
+    {
+        $this->container->setParameters([
+            'foo' => 'bar'
+        ]);
+        $this->assertEquals('bar', $this->container->getParameter('foo'));
+        $this->container->addParameters([
+           'foo' => 'bar1'
+        ]);
+        $this->assertEquals('bar1', $this->container->getParameter('foo'));
+        $this->container->setParameter('foo', 'bar2');
+        $this->assertEquals('bar2', $this->container->getParameter('foo'));
     }
 
     public function testGetWithArguments()

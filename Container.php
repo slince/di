@@ -93,12 +93,13 @@ class Container
     /**
      * 获取一个实例
      * @param string $key
+     * @param boolean $new 强制生成新的实例
      * @return object
      */
-    public function get($key)
+    public function get($key, $new = false)
     {
         $key = $this->getRealKey($key);
-        if (isset($this->instances[$key])) {
+        if (isset($this->instances[$key]) && !$new) {
             return $this->instances[$key];
         }
         if (!isset($this->store[$key])) {
@@ -190,7 +191,17 @@ class Container
      */
     public function addParameters(array $parameters)
     {
-        $this->parameters += $parameters;
+        $this->parameters = array_replace($this->parameters, $parameters);
+    }
+
+    /**
+     * 设置参数
+     * @param $name
+     * @param mixed $value
+     */
+    public function setParameter($name, $value)
+    {
+        $this->parameters[$name] = $value;
     }
 
     /**
