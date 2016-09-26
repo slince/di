@@ -15,6 +15,8 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
 
     const DIRECTOR_CLASS = '\Slince\Di\Tests\TestClass\Director';
 
+    const ACTOR_CLASS = '\Slince\Di\Tests\TestClass\Actor';
+
     const MOVIE_CLASS = '\Slince\Di\Tests\TestClass\Movie';
 
     public function setUp()
@@ -115,5 +117,22 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $director = $this->container->get('director');
         $this->assertEquals('LiAn', $director->getName());
         $this->assertEquals(48, $director->getAge());
+    }
+
+    public function testRecursiveParameters()
+    {
+        $this->container->setParameter('actor.profile.firstname', 'Jack');
+        $this->container->setParameter('actor.profile.lastname', 'Chen');
+        $this->container->setParameter('actor.profile.username', '%actor.profile.firstname% %actor.profile.lastname%');
+        $this->container->setParameter('actor.profile.name', 'Jack');
+        $this->container->setDefinition('actor', new Definition(static::ACTOR_CLASS, [
+            [
+                'fistname' => '%actor.profile.firstname%',
+                'username' => '%actor.profile.username%',
+            ]
+        ]));
+        $profile = $this->container->get('actor')->getProfile();
+        $this->assertEquals('Jack', $profile['fistname']);
+        $this->assertEquals('Jack Chen', $profile['username']);
     }
 }

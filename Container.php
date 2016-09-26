@@ -234,6 +234,8 @@ class Container
                 }, $parameter);
             } elseif ($parameter instanceof Reference) { //服务依赖
                 $parameter = $this->get($parameter->getName());
+            } elseif (is_array($parameter)) {
+                $parameter = $this->resolveParameters($parameter);
             }
             return $parameter;
         }, $parameters);
