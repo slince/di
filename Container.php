@@ -225,13 +225,7 @@ class Container
         return array_map(function ($parameter) {
             //字符类型参数处理下预定义参数的情况
             if (is_string($parameter)) {
-                $parameter = preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
-                    $key = $matches[1];
-                    if (isset($this->parameters[$key])) {
-                        return $this->parameters[$key];
-                    }
-                    throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
-                }, $parameter);
+                $parameter = $this->resolveString($parameter);
             } elseif ($parameter instanceof Reference) { //服务依赖
                 $parameter = $this->get($parameter->getName());
             } elseif (is_array($parameter)) {
@@ -239,6 +233,31 @@ class Container
             }
             return $parameter;
         }, $parameters);
+    }
+
+    /**
+     * 处理字符串
+     * @param $value
+     * @return mixed
+     * @throws DependencyInjectionException
+     */
+    protected function resolveString($value)
+    {
+        //%xx%类型的直接返回对应的参数
+        if (preg_match("#^%([^%\s]+)%$#", $value, $match)) {
+            $key = $match[1];
+            if (isset($this->parameters[$key])) {
+                return $this->parameters[$key];
+            }
+            throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
+        }
+        return preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
+            $key = $matches[1];
+            if (isset($this->parameters[$key])) {
+                return $this->parameters[$key];
+            }
+            throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
+        }, $value);
     }
 
     /**
