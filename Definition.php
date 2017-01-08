@@ -7,44 +7,47 @@ namespace Slince\Di;
 
 class Definition
 {
-
     /**
-     * 当前类
-     *
+     * 类名
      * @var string
      */
     protected $className;
 
     /**
      * 构造参数
-     *
      * @var array
      */
     protected $arguments = [];
 
     /**
      * setter函数
-     *
      * @var array
      */
     protected $methodCalls = [];
 
-    public function __construct($className, $arguments = [], $methodCalls = [])
+    /**
+     * 属性赋值
+     * @var array
+     */
+    protected $properties = [];
+
+    public function __construct($className, array $arguments = [], array $methodCalls = [], array $properties = [])
     {
         $this->className = $className;
         $this->arguments = $arguments;
         $this->methodCalls = $methodCalls;
+        $this->properties = $properties;
     }
 
     /**
      * 设置一个构造参数
-     * @param int $index
+     * @param int|string $indexOrName 参数名或者参数索引
      * @param mixed $argument
      * @return $this
      */
-    public function setArgument($index, $argument)
+    public function setArgument($indexOrName, $argument)
     {
-        $this->arguments[$index] = $argument;
+        $this->arguments[$indexOrName] = $argument;
         return $this;
     }
 
@@ -71,12 +74,12 @@ class Definition
 
     /**
      * 获取指定次序上的参数
-     * @param int $index
+     * @param int|string $indexOrName
      * @return mixed
      */
-    public function getArgument($index)
+    public function getArgument($indexOrName)
     {
-        return isset($this->arguments[$index]) ? $this->arguments[$index] : null;
+        return isset($this->arguments[$indexOrName]) ? $this->arguments[$indexOrName] : null;
     }
 
     /**
@@ -113,13 +116,21 @@ class Definition
 
     /**
      * 获取指定函数名下的参数
-     *
      * @param string $method
      * @return array|null
      */
     public function getMethodCall($method)
     {
         return isset($this->methodCalls[$method]) ? $this->methodCalls[$method] : null;
+    }
+
+    /**
+     * 获取所有的预定义属性值对
+     * @return array
+     */
+    public function getProperties()
+    {
+        return $this->properties;
     }
 
     /**

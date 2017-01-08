@@ -5,6 +5,7 @@
  */
 namespace Slince\Di;
 
+use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\DependencyInjectionException;
 
 class Container
@@ -16,16 +17,28 @@ class Container
     protected $aliases = [];
 
     /**
-     * 实例数组
+     * 单例实例数组
      * @var array
      */
-    protected $instances = [];
+    protected $singletons = [];
 
     /**
-     * 实例创建关系数组
+     * 所有需要分享的类或者类别名
      * @var array
      */
-    protected $store = [];
+    protected $shares = [];
+
+    /**
+     * 类实例化工作的
+     * @var array
+     */
+    protected $delegates = [];
+
+    /**
+     * 全局接口与类绑定关系
+     * @var array
+     */
+    protected $bindings = [];
 
     /**
      * 参数集合
@@ -34,23 +47,33 @@ class Container
     protected $parameters;
 
     /**
-     * 设置一个建造关系
-     * @param string $key
-     * @param object|\Closure $create
-     * @param boolean $share
-     * @return Container
+     * 给指定类或者别名指向类设置实例化向导
+     * @param string $name 被定义的类名或者别名
+     * @param $arguments
+     * @param array $properties
+     * @param array $methodCalls
+     * @return Definition
      */
-    public function set($key, $create, $share = false)
+    public function define($name, $arguments, array $properties = [], array $methodCalls = [])
     {
-        if (!$create instanceof \Closure) {
-            $create = function () use ($create) {
-                return $create;
-            };
+        $definition = new Definition($name, $arguments, $properties, $methodCalls);
+        $this->setDefinition($name, $definition);
+        return $definition;
+    }
+
+    /**
+     * 设置指定类的实例化过程的代理
+     * @param string $name
+     * @param mixed $creation 闭包及其它合法可调用的语法结构
+     * @throws ConfigException
+     * @return $this
+     */
+    public function delegate($name, $creation)
+    {
+        if (!is_callable($creation)) {
+            throw new ConfigException(sprintf("Delegate expects a valid callable or executable class::method string at Argument 2"));
         }
-        $this->store[$key] = [
-            'callback' => $create,
-            'share' => $share
-        ];
+        $this->delegates[$name] = $creation;
         return $this;
     }
 
@@ -71,59 +94,107 @@ class Container
     }
 
     /**
-     * 设置一个共享关系
-     * @param string $key
-     * @param object|\Closure $create
+     * 给指定类或者类别名设置实例化指令
+     * @param string $name
+     * @param mixed $creation
+     * @param boolean $share
+     * @return Container
      */
-    public function share($key, $create)
+    public function set($name, $creation, $share = false)
     {
-        $this->set($key, $create, true);
+        if (is_callable($creation)) {
+            $this->delegate($name, $creation);
+            $share && $this->share($name);
+        } elseif (is_object($creation)) {
+            $this->share($creation); //如果creation是实例的话则只能单例
+        }
+        return $this;
     }
 
     /**
-     * 设置一个别名
+     * 设置接口与类的绑定
+     * @param string $original 接口、抽象类或者一个常见的类
+     * @param string $class 一个可被实例化的类名
+     * @throws ConfigException
+     */
+    public function bind($original, $class)
+    {
+        if (is_subclass_of($class, $original)) {
+            $this->bindings[$original] = $class;
+        }
+        throw new ConfigException(sprintf("Class '%s' must be subclass of '%s'", $class, $original));
+    }
+
+    /**
+     * 设置类或者类实例的分享
+     * @param string|Object $nameOrInstance
+     * @return $this
+     */
+    public function share($nameOrInstance)
+    {
+        if (is_object($nameOrInstance)) {
+            $this->shareInstance($nameOrInstance);
+        } else {
+            $this->shares[$nameOrInstance] = null;
+        }
+        return $this;
+    }
+
+    /**
+     * 分享类实例
+     * @param Object $instance
+     */
+    protected function shareInstance($instance)
+    {
+        $class = get_class($instance);
+        $this->shares[$class] = $instance;
+    }
+
+    /**
+     * 为指定类设置一个别名
+     * @param string $original
      * @param string $alias
-     * @param string $key
      */
-    public function alias($alias, $key)
+    public function alias($original, $alias)
     {
-        $this->aliases[$alias] = $key;
+        $this->aliases[$alias] = $original;
     }
 
     /**
-     * 获取一个实例
-     * @param string $key
-     * @param boolean $new 强制生成新的实例
+     * 以获取一个实例
+     * @param string $name
+     * @param array $arguments 传递给类的构造参数，会覆盖预先定义的同名参数
      * @return object
      */
-    public function get($key, $new = false)
+    public function get($name, array $arguments = [])
     {
-        $key = $this->getRealKey($key);
-        if (isset($this->instances[$key]) && !$new) {
-            return $this->instances[$key];
+        $class = $this->resolveAlias($name);
+        //如果单例的话直接返回实例结果
+        if (isset($this->singletons[$class])) {
+            return $this->singletons[$class];
         }
-        if (!isset($this->store[$key])) {
-            $this->share($key, function () use ($key) {
-                return $this->create($key);
+        //如果没有设置实例化指令的代理则为其设置代理
+        if (!isset($this->delegates[$class])) {
+            $this->delegate($class, function () use ($class, $arguments) {
+                return $this->create($class, $arguments);
             });
         }
-        $instance = call_user_func($this->store[$key]['callback'], $this);
-        if ($this->store[$key]['share']) {
-            $this->instances[$key] = $instance;
-        }
+        //执行实例化指令
+        $instance = call_user_func($this->delegates[$class], $this);
         return $instance;
     }
 
     /**
-     * 自动获取实例并解决简单的依赖关系
-     * @param string $className
-     * @param array $arguments
+     * 执行指定类或别名的实例化指令以获取一个实例（饥饿模式）
+     * @param string $name 指定类或者类别名
+     * @param array $arguments 构造参数，覆盖预定义参数
      * @throws DependencyInjectionException
      * @return object
      */
-    public function create($className, $arguments = [])
+    public function create($name, $arguments = [])
     {
-        $reflection = $this->reflectClass($className);
+        $class = $this->resolveAlias($name);
+        $reflection = $this->reflectClass($class);
         $constructor = $reflection->getConstructor();
         if (!is_null($constructor)) {
             $constructorArgs = $this->resolveConstructArguments($constructor, $this->resolveParameters($arguments));
@@ -140,7 +211,7 @@ class Container
      * @throws DependencyInjectionException
      * @return object
      */
-    public function createFromDefinition(Definition $definition)
+    protected function createFromDefinition(Definition $definition)
     {
         $arguments = $definition->getArguments();
         $reflection = $this->reflectClass($definition->getClassName());
@@ -157,12 +228,24 @@ class Container
                 $methodReflection = $reflection->getMethod($method);
             } catch (\ReflectionException $e) {
                 throw new DependencyInjectionException(sprintf(
-                    'Class "%s" don\'t have method "%s"',
+                    "Class '%s' has no method '%s'",
                     $definition->getClassName(),
                     $method
                 ));
             }
             $methodReflection->invokeArgs($instance, $this->resolveParameters($methodArguments));
+        }
+        // 触发属性
+        foreach ($definition->getProperties() as $propertyName => $propertyValue) {
+            if (property_exists($instance, $propertyName)) {
+                $instance->$propertyName = $propertyValue;
+            } else {
+                throw new DependencyInjectionException(sprintf(
+                    "Class '%s' has no property '%s'",
+                    $definition->getClassName(),
+                    $propertyName
+                ));
+            }
         }
         return $instance;
     }
@@ -307,12 +390,12 @@ class Container
     }
 
     /**
-     * 处理alias
-     * @param string $key
+     * 处理alias，或者别名指向的真实类名
+     * @param string $alias
      * @return string
      */
-    protected function getRealKey($key)
+    protected function resolveAlias($alias)
     {
-        return isset($this->aliases[$key]) ? $this->aliases[$key] : $key;
+        return isset($this->aliases[$alias]) ? $this->aliases[$alias] : $alias;
     }
 }
