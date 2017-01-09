@@ -32,7 +32,7 @@ class Container
      * 全局接口与类绑定关系
      * @var array
      */
-    protected $bindings = [];
+    protected $contextBindings = [];
 
     /**
      * 参数集合
@@ -99,6 +99,28 @@ class Container
     }
 
     /**
+     * 将name直接绑定到某个指定存在的类（可用来绑定接口或者抽象类与实现类）
+     * @param string $name
+     * @param string $class 一个可被实例化的类名
+     * @param string $context 为指定的上下文设置绑定指令
+     * @throws ConfigException
+     */
+    public function bind($name, $class, $context = null)
+    {
+        if (is_null($context)) {
+            $this->definitions[$name] = $class;
+        } else {
+            list($contextClass, $contextMethod) = explode('::', $context);
+            isset($this->contextBindings[$contextClass]) || $this->contextBindings[$contextClass] = [];
+            $this->contextBindings[$contextClass] = [
+                'original' => $name,
+                'bind' => $class,
+                'method' => $contextMethod ?: false
+            ];
+        }
+    }
+
+    /**
      * 给指定类或者类别名设置实例化指令
      * ```
      * //直接绑定实例
@@ -111,7 +133,7 @@ class Container
      * });
      *
      * //绑定预定义
-     * $container->set('student', 'Foo\Bar\StudentClass', [
+     * $container->set('student', new Definition('Foo\Bar\StudentClass', [
      *      'gender' => 'boy',
      *      'school' => new Reference('school')
      * ], [
@@ -119,7 +141,10 @@ class Container
      * ], [
      *     'father' => 'James',
      *     'mather' => 'Sophie'
-     * ]);
+     * ]));
+     *
+     * //绑定到指定类
+     * $container->set('student', Foo\Bar\StudentClass);
      * ```
      * @param string $name
      * @param mixed $definition
@@ -134,6 +159,8 @@ class Container
             $share && $this->share($name);
         } elseif (is_object($definition)) {
             $this->instance($name, $definition); //如果$definition是实例的话则只能单例
+        } elseif (is_string($definition)) {
+            $this->bind($name, $definition);
         } elseif ($definition instanceof Definition) {
             $this->setDefinition($name, $definition, $share);
         } else {
@@ -155,21 +182,6 @@ class Container
         $this->definitions[$name] = $definition;
         $share && $this->share($name);
         return $definition;
-    }
-
-    /**
-     * 设置接口与类的绑定
-     * @param string $original 接口、抽象类或者一个常见的类
-     * @param string $class 一个可被实例化的类名
-     * @param string $context 为指定的上下文设置绑定指令
-     * @throws ConfigException
-     */
-    public function bind($original, $class, $context)
-    {
-        if (is_subclass_of($class, $original)) {
-            $this->bindings[$original] = $class;
-        }
-        throw new ConfigException(sprintf("Class '%s' must be subclass of '%s'", $class, $original));
     }
 
     /**
@@ -209,15 +221,17 @@ class Container
         //如果没有设置实例化指令的代理则为其设置代理
         if (!isset($this->definitions[$class])) {
             $this->delegate($class, function () use ($class, $arguments) {
-                list(, $instance) =  $this->createInstance($class, $arguments);
+                list(, $instance) =  $this->createReflectionAndInstance($class, $arguments);
                 return $instance;
             });
         }
         $definition = $this->definitions[$class];
-        if (is_object($definition)) {
-            $instance = $definition;
-        } elseif (is_callable($definition)) {
+        if (is_callable($definition)) {
             $instance = call_user_func($definition, $this, $arguments);
+        } elseif (is_object($definition)) {
+            $instance = $definition;
+        } elseif (is_string($definition)) {
+            list(, $instance) = $this->createReflectionAndInstance($definition, $arguments);
         } else {
             $instance = $this->createFromDefinition($definition, $arguments);
         }
@@ -340,7 +354,6 @@ class Container
             }
             $reflectionMethod->invokeArgs($instance, $this->resolveMethodArguments($reflectionMethod, $methodArguments));
         }
-
         // 触发属性
         foreach ($definition->getProperties() as $propertyName => $propertyValue) {
             if (property_exists($instance, $propertyName)) {
@@ -358,10 +371,11 @@ class Container
      * 处理方法所需要的参数
      * @param \ReflectionMethod $method
      * @param array $arguments
+     * @param array $contextBindings
      * @throws DependencyInjectionException
      * @return array
      */
-    protected function resolveMethodArguments(\ReflectionMethod $method, array $arguments)
+    protected function resolveMethodArguments(\ReflectionMethod $method, array $arguments, array $contextBindings = [])
     {
         $constructorArgs = [];
         $arguments = $this->resolveParameters($arguments);
@@ -373,7 +387,9 @@ class Container
             if (isset($arguments[$index])) {
                 $constructorArgs[] = $arguments[$index];
             } elseif (($dependency = $parameter->getClass()) != null) {
-                $constructorArgs[] = $this->get($dependency->getName());
+                $contextBinding = end($contextBindings);
+                $dependencyName = $contextBinding ? $contextBinding['bind'] : $dependency->getName();
+                $constructorArgs[] = $this->get($dependencyName);
             } elseif ($parameter->isOptional()) {
                 $constructorArgs[] = $parameter->getDefaultValue();
             } else {
@@ -384,6 +400,34 @@ class Container
             }
         }
         return $constructorArgs;
+    }
+
+    /**
+     * 获取指定类的绑定关系
+     * [
+     *     'User' => [
+     *          'original' => 'SchoolInterface'
+     *          'bind' => 'MagicSchool',
+     *          'method' => false
+     *     ]
+     * ]
+     * @param $context
+     * @param $original
+     * @param $methodName
+     * @return mixed
+     */
+    protected function getContextBindings($context, $original = null, $methodName = null)
+    {
+        $contextBindings = isset($this->contextBindings[$context]) ? $this->contextBindings[$context] : [];
+        return array_filter($contextBindings, function($binding) use ($original, $methodName){
+            if ($original && $binding['original'] != $original) {
+                return false;
+            }
+            if ($methodName && $binding['method'] != $methodName) {
+                return false;
+            }
+            return true;
+        });
     }
 
     /**
