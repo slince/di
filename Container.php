@@ -17,22 +17,16 @@ class Container
     protected $aliases = [];
 
     /**
-     * 单例实例数组
-     * @var array
-     */
-    protected $singletons = [];
-
-    /**
-     * 所有需要分享的类或者类别名
+     * 所有需要分享的类及其实例
      * @var array
      */
     protected $shares = [];
 
     /**
-     * 类实例化工作的
+     * 预定义的依赖,支持instance、callable、Definition
      * @var array
      */
-    protected $delegates = [];
+    protected $definitions = [];
 
     /**
      * 全局接口与类绑定关系
@@ -62,7 +56,7 @@ class Container
     }
 
     /**
-     * 设置指定类的实例化过程的代理
+     * 设置指定类的实例化代理
      * @param string $name
      * @param mixed $creation 闭包及其它合法可调用的语法结构
      * @throws ConfigException
@@ -73,51 +67,104 @@ class Container
         if (!is_callable($creation)) {
             throw new ConfigException(sprintf("Delegate expects a valid callable or executable class::method string at Argument 2"));
         }
-        $this->delegates[$name] = $creation;
+        $this->definitions[$name] = $creation;
+        return $this;
+    }
+
+    /**
+     * 绑定实例
+     * ```
+     * $container->instance('user', $user);
+     * //或者直接提供实例
+     * $container->instance($user);
+     *
+     * ```
+     * @param $name
+     * @param $instance
+     * @throws ConfigException
+     * @return $this
+     */
+    public function instance($name, $instance)
+    {
+        if (func_get_args() == 1) {
+            if (!is_object($name)) {
+                throw new ConfigException(sprintf("Instance expects a valid object"));
+            }
+            $instance = $name;
+            $name = get_class($instance);
+        }
+        $this->definitions[$name] = $instance;
+        $this->share($name);
+        return $this;
+    }
+
+    /**
+     * 给指定类或者类别名设置实例化指令
+     * ```
+     * //直接绑定实例
+     * $container->set('student', $student);
+     *
+     * //绑定闭包或者其它可调用结构
+     * $container->set('student', 'StudentFactory::create');
+     * $container->set('student', function(){
+     *     return new Student();
+     * });
+     *
+     * //绑定预定义
+     * $container->set('student', 'Foo\Bar\StudentClass', [
+     *      'gender' => 'boy',
+     *      'school' => new Reference('school')
+     * ], [
+     *     'setAge' => [18]
+     * ], [
+     *     'father' => 'James',
+     *     'mather' => 'Sophie'
+     * ]);
+     * ```
+     * @param string $name
+     * @param mixed $definition
+     * @param boolean $share
+     * @throws ConfigException
+     * @return $this
+     */
+    public function set($name, $definition, $share = false)
+    {
+        if (is_callable($definition)) {
+            $this->delegate($name, $definition);
+            $share && $this->share($name);
+        } elseif (is_object($definition)) {
+            $this->instance($name, $definition); //如果$definition是实例的话则只能单例
+        } elseif ($definition instanceof Definition) {
+            $this->setDefinition($name, $definition, $share);
+        } else {
+            throw new ConfigException(sprintf("Unexpected object definition type '%s'", gettype($definition)));
+        }
         return $this;
     }
 
     /**
      * 如果不能简单获取，则使用设置定义的方式
-     * @param string $key
+     * @param string $name
      * @param Definition $definition
      * @param boolean $share
      * @return Definition
+     * @deprecated Will be protected, Use define & share or set instead.
      */
-    public function setDefinition($key, Definition $definition, $share = false)
+    public function setDefinition($name, Definition $definition, $share = false)
     {
-        $callback = function () use ($definition) {
-            return $this->createFromDefinition($definition);
-        };
-        $this->set($key, $callback, $share);
+        $this->definitions[$name] = $definition;
+        $share && $this->share($name);
         return $definition;
-    }
-
-    /**
-     * 给指定类或者类别名设置实例化指令
-     * @param string $name
-     * @param mixed $creation
-     * @param boolean $share
-     * @return Container
-     */
-    public function set($name, $creation, $share = false)
-    {
-        if (is_callable($creation)) {
-            $this->delegate($name, $creation);
-            $share && $this->share($name);
-        } elseif (is_object($creation)) {
-            $this->share($creation); //如果creation是实例的话则只能单例
-        }
-        return $this;
     }
 
     /**
      * 设置接口与类的绑定
      * @param string $original 接口、抽象类或者一个常见的类
      * @param string $class 一个可被实例化的类名
+     * @param string $context 为指定的上下文设置绑定指令
      * @throws ConfigException
      */
-    public function bind($original, $class)
+    public function bind($original, $class, $context)
     {
         if (is_subclass_of($class, $original)) {
             $this->bindings[$original] = $class;
@@ -127,27 +174,13 @@ class Container
 
     /**
      * 设置类或者类实例的分享
-     * @param string|Object $nameOrInstance
+     * @param string $name
      * @return $this
      */
-    public function share($nameOrInstance)
+    public function share($name)
     {
-        if (is_object($nameOrInstance)) {
-            $this->shareInstance($nameOrInstance);
-        } else {
-            $this->shares[$nameOrInstance] = null;
-        }
+        $this->shares[$name] = null;
         return $this;
-    }
-
-    /**
-     * 分享类实例
-     * @param Object $instance
-     */
-    protected function shareInstance($instance)
-    {
-        $class = get_class($instance);
-        $this->shares[$class] = $instance;
     }
 
     /**
@@ -170,83 +203,43 @@ class Container
     {
         $class = $this->resolveAlias($name);
         //如果单例的话直接返回实例结果
-        if (isset($this->singletons[$class])) {
-            return $this->singletons[$class];
+        if (isset($this->shares[$class])) {
+            return $this->shares[$class];
         }
         //如果没有设置实例化指令的代理则为其设置代理
-        if (!isset($this->delegates[$class])) {
+        if (!isset($this->definitions[$class])) {
             $this->delegate($class, function () use ($class, $arguments) {
-                return $this->create($class, $arguments);
+                list(, $instance) =  $this->createInstance($class, $arguments);
+                return $instance;
             });
         }
-        //执行实例化指令
-        $instance = call_user_func($this->delegates[$class], $this);
+        $definition = $this->definitions[$class];
+        if (is_object($definition)) {
+            $instance = $definition;
+        } elseif (is_callable($definition)) {
+            $instance = call_user_func($definition, $this, $arguments);
+        } else {
+            $instance = $this->createFromDefinition($definition, $arguments);
+        }
+        //如果设置了单例则缓存实例
+        if (isset($this->shares[$class])) {
+            $this->shares[$class] = $instance;
+        }
         return $instance;
     }
 
     /**
-     * 执行指定类或别名的实例化指令以获取一个实例（饥饿模式）
+     * 分析类结构并自动解决依赖生成一个类实例
      * @param string $name 指定类或者类别名
      * @param array $arguments 构造参数，覆盖预定义参数
      * @throws DependencyInjectionException
      * @return object
+     * @deprecated
      */
     public function create($name, $arguments = [])
     {
         $class = $this->resolveAlias($name);
-        $reflection = $this->reflectClass($class);
-        $constructor = $reflection->getConstructor();
-        if (!is_null($constructor)) {
-            $constructorArgs = $this->resolveConstructArguments($constructor, $this->resolveParameters($arguments));
-            $instance = $reflection->newInstanceArgs($constructorArgs);
-        } else {
-            $instance = $reflection->newInstanceWithoutConstructor();
-        }
-        return $instance;
-    }
-
-    /**
-     * 根据definition创建实例
-     * @param Definition $definition
-     * @throws DependencyInjectionException
-     * @return object
-     */
-    protected function createFromDefinition(Definition $definition)
-    {
-        $arguments = $definition->getArguments();
-        $reflection = $this->reflectClass($definition->getClassName());
-        $constructor = $reflection->getConstructor();
-        if (!is_null($constructor)) {
-            $constructorArgs = $this->resolveConstructArguments($constructor, $this->resolveParameters($arguments));
-            $instance = $reflection->newInstanceArgs($constructorArgs);
-        } else {
-            $instance = $reflection->newInstanceWithoutConstructor();
-        }
-        // 触发setter函数
-        foreach ($definition->getMethodCalls() as $method => $methodArguments) {
-            try {
-                $methodReflection = $reflection->getMethod($method);
-            } catch (\ReflectionException $e) {
-                throw new DependencyInjectionException(sprintf(
-                    "Class '%s' has no method '%s'",
-                    $definition->getClassName(),
-                    $method
-                ));
-            }
-            $methodReflection->invokeArgs($instance, $this->resolveParameters($methodArguments));
-        }
-        // 触发属性
-        foreach ($definition->getProperties() as $propertyName => $propertyValue) {
-            if (property_exists($instance, $propertyName)) {
-                $instance->$propertyName = $propertyValue;
-            } else {
-                throw new DependencyInjectionException(sprintf(
-                    "Class '%s' has no property '%s'",
-                    $definition->getClassName(),
-                    $propertyName
-                ));
-            }
-        }
+        list(, $instance) =  $this->createReflectionAndInstance($class, $arguments);
         return $instance;
     }
 
@@ -296,6 +289,69 @@ class Container
     public function getParameter($name, $default = null)
     {
         return isset($this->parameters[$name]) ? $this->parameters[$name] : $default;
+    }
+
+    /**
+     * 根据definition创建实例
+     * @param Definition $definition
+     * @param array $arguments
+     * @throws DependencyInjectionException
+     * @return object
+     */
+    protected function createFromDefinition(Definition $definition, array $arguments)
+    {
+        $arguments = array_replace($definition->getArguments(), $arguments);
+        list($reflection, $instance) = $this->createReflectionAndInstance($definition->getClass(), $arguments);
+        $this->prepareInstance($reflection, $instance, $definition);
+        return $instance;
+    }
+
+    /**
+     * 构建实例
+     * @param string $class
+     * @param array $arguments
+     * @return array
+     */
+    protected function createReflectionAndInstance($class, array $arguments)
+    {
+        $reflection = $this->reflectClass($class);
+        $constructor = $reflection->getConstructor();
+        if (!is_null($constructor)) {
+            $constructorArgs = $this->resolveConstructArguments($constructor, $this->resolveParameters($arguments));
+            $instance = $reflection->newInstanceArgs($constructorArgs);
+        } else {
+            $instance = $reflection->newInstanceWithoutConstructor();
+        }
+        return [$reflection, $instance];
+    }
+
+    protected function prepareInstance(\ReflectionClass $reflection, $instance, Definition $definition)
+    {
+        // 触发setter函数
+        foreach ($definition->getMethodCalls() as $method => $methodArguments) {
+            try {
+                $methodReflection = $reflection->getMethod($method);
+            } catch (\ReflectionException $e) {
+                throw new DependencyInjectionException(sprintf(
+                    "Class '%s' has no method '%s'",
+                    $definition->getClass(),
+                    $method
+                ));
+            }
+            $methodReflection->invokeArgs($instance, $this->resolveParameters($methodArguments));
+        }
+        // 触发属性
+        foreach ($definition->getProperties() as $propertyName => $propertyValue) {
+            if (property_exists($instance, $propertyName)) {
+                $instance->$propertyName = $propertyValue;
+            } else {
+                throw new DependencyInjectionException(sprintf(
+                    "Class '%s' has no property '%s'",
+                    $definition->getClass(),
+                    $propertyName
+                ));
+            }
+        }
     }
 
     /**

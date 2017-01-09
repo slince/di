@@ -8,7 +8,7 @@
 
 这是一个依赖注入组件，通过简单的实现即可让类的实例化过程变得简单；
 
-### 安装
+## 安装
 
 在composer.json中添加
 ```
@@ -18,11 +18,11 @@
     }
 }
 ```
-### 用法
+## 用法
 
 为了适应不同的场景，组件采用多种方法帮助获取实例，以下是三种方式案例
 
-#### 1、通过实例绑定
+### 1、通过实例绑定
 ```
 class Reader
 {
@@ -40,7 +40,7 @@ var_dump($instance instanceof Reader);
 ```
 如果需要定义一个共享的实例,则使用share取代set方法
 
-#### 2、通过自动获取
+### 2、通过自动获取
 ```
 class Reader 
 {
@@ -63,7 +63,7 @@ var_dump($instance instanceof Reader);
 自动获取可以解决简单的实例依赖关系，但如果依赖是一个标量并且不是可选的，则无法完成自动注入。
 
 
-#### 3、描述类
+### 3、描述类
 ```
 class Reader 
 {
@@ -121,3 +121,28 @@ $instance = $di->get('reader');
 var_dump($instance instanceof I\Like\Read\Book\Reader); 
 ```
 
+### 新增api
+
+#### 服务定义
+- 定义一个详细实例化指令
+```
+Container::define 
+```
+- 定义实例化方法或者函数，例如绑定一个类的工厂方法或者自定义的闭包
+```
+Container::delegate
+```
+- 直接绑定接口
+```
+Container::instance
+```
+
+#### 绑定一个接口到它的实现，如果有类在实例化的时候依赖到接口将会使用实现类替换
+```
+Container::bind
+```
+
+#### 设置单例模式
+```
+Container:;share
+```

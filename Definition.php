@@ -11,7 +11,7 @@ class Definition
      * 类名
      * @var string
      */
-    protected $className;
+    protected $class;
 
     /**
      * 构造参数
@@ -23,7 +23,7 @@ class Definition
      * setter函数
      * @var array
      */
-    protected $methodCalls = [];
+    protected $calls = [];
 
     /**
      * 属性赋值
@@ -31,11 +31,11 @@ class Definition
      */
     protected $properties = [];
 
-    public function __construct($className, array $arguments = [], array $methodCalls = [], array $properties = [])
+    public function __construct($className, array $arguments = [], array $calls = [], array $properties = [])
     {
-        $this->className = $className;
+        $this->class = $className;
         $this->arguments = $arguments;
-        $this->methodCalls = $methodCalls;
+        $this->calls = $calls;
         $this->properties = $properties;
     }
 
@@ -90,18 +90,18 @@ class Definition
      */
     public function setMethodCall($method, array $arguments)
     {
-        $this->methodCalls[$method] = $arguments;
+        $this->calls[$method] = $arguments;
         return $this;
     }
 
     /**
      * 批量设置构造参数
-     * @param array $methodCalls
+     * @param array $calls
      * @return $this
      */
-    public function setMethodCalls(array $methodCalls)
+    public function setMethodCalls(array $calls)
     {
-        $this->methodCalls = array_merge($this->methodCalls, $methodCalls);
+        $this->calls = array_merge($this->calls, $calls);
         return $this;
     }
 
@@ -111,7 +111,7 @@ class Definition
      */
     public function getMethodCalls()
     {
-        return $this->methodCalls;
+        return $this->calls;
     }
 
     /**
@@ -121,7 +121,7 @@ class Definition
      */
     public function getMethodCall($method)
     {
-        return isset($this->methodCalls[$method]) ? $this->methodCalls[$method] : null;
+        return isset($this->calls[$method]) ? $this->calls[$method] : null;
     }
 
     /**
@@ -137,8 +137,8 @@ class Definition
      * 获取当前类名
      * @return string
      */
-    public function getClassName()
+    public function getClass()
     {
-        return $this->className;
+        return $this->class;
     }
 }
