@@ -317,7 +317,7 @@ class Container
         $reflection = $this->reflectClass($class);
         $constructor = $reflection->getConstructor();
         if (!is_null($constructor)) {
-            $constructorArgs = $this->resolveConstructArguments($constructor, $this->resolveParameters($arguments));
+            $constructorArgs = $this->resolveMethodArguments($constructor, $this->resolveParameters($arguments));
             $instance = $reflection->newInstanceArgs($constructorArgs);
         } else {
             $instance = $reflection->newInstanceWithoutConstructor();
@@ -330,7 +330,7 @@ class Container
         // 触发setter函数
         foreach ($definition->getMethodCalls() as $method => $methodArguments) {
             try {
-                $methodReflection = $reflection->getMethod($method);
+                $reflectionMethod = $reflection->getMethod($method);
             } catch (\ReflectionException $e) {
                 throw new DependencyInjectionException(sprintf(
                     "Class '%s' has no method '%s'",
@@ -338,8 +338,9 @@ class Container
                     $method
                 ));
             }
-            $methodReflection->invokeArgs($instance, $this->resolveParameters($methodArguments));
+            $reflectionMethod->invokeArgs($instance, $this->resolveMethodArguments($reflectionMethod, $methodArguments));
         }
+
         // 触发属性
         foreach ($definition->getProperties() as $propertyName => $propertyValue) {
             if (property_exists($instance, $propertyName)) {
@@ -352,6 +353,37 @@ class Container
                 ));
             }
         }
+    }
+    /**
+     * 处理方法所需要的参数
+     * @param \ReflectionMethod $method
+     * @param array $arguments
+     * @throws DependencyInjectionException
+     * @return array
+     */
+    protected function resolveMethodArguments(\ReflectionMethod $method, array $arguments)
+    {
+        $constructorArgs = [];
+        $arguments = $this->resolveParameters($arguments);
+        $isNumeric = !empty($arguments) && is_numeric(key($arguments));
+        foreach ($method->getParameters() as $parameter) {
+            //如果提供的是数字索引按照参数位置处理否则按照参数名
+            $index = $isNumeric ? $parameter->getPosition() : $parameter->getName();
+            // 如果定义过依赖 则直接获取
+            if (isset($arguments[$index])) {
+                $constructorArgs[] = $arguments[$index];
+            } elseif (($dependency = $parameter->getClass()) != null) {
+                $constructorArgs[] = $this->get($dependency->getName());
+            } elseif ($parameter->isOptional()) {
+                $constructorArgs[] = $parameter->getDefaultValue();
+            } else {
+                throw new DependencyInjectionException(sprintf(
+                    'Parameter "%s" must be provided',
+                    $parameter->getName()
+                ));
+            }
+        }
+        return $constructorArgs;
     }
 
     /**
@@ -397,36 +429,6 @@ class Container
             }
             throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
         }, $value);
-    }
-
-    /**
-     * 处理构造方法所需要的参数
-     * @param \ReflectionMethod $constructor
-     * @param array $arguments
-     * @throws DependencyInjectionException
-     * @return array
-     */
-    protected function resolveConstructArguments(\ReflectionMethod $constructor, array $arguments)
-    {
-        $constructorArgs = [];
-        $arguments = $this->resolveParameters($arguments);
-        foreach ($constructor->getParameters() as $parameter) {
-            $index = $parameter->getPosition();
-            // 如果定义过依赖 则直接获取
-            if (isset($arguments[$index])) {
-                $constructorArgs[] = $arguments[$index];
-            } elseif (($dependency = $parameter->getClass()) != null) {
-                $constructorArgs[] = $this->get($dependency->getName());
-            } elseif ($parameter->isOptional()) {
-                $constructorArgs[] = $parameter->getDefaultValue();
-            } else {
-                throw new DependencyInjectionException(sprintf(
-                    'Parameter "%s" must be provided',
-                    $parameter->getName()
-                ));
-            }
-        }
-        return $constructorArgs;
     }
 
     /**
