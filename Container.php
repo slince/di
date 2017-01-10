@@ -11,12 +11,6 @@ use Slince\Di\Exception\DependencyInjectionException;
 class Container
 {
     /**
-     * 别名数组
-     * @var array
-     */
-    protected $aliases = [];
-
-    /**
      * 所有需要分享的类及其实例
      * @var array
      */
@@ -104,6 +98,7 @@ class Container
      * @param string $class 一个可被实例化的类名
      * @param string $context 为指定的上下文设置绑定指令
      * @throws ConfigException
+     * @return $this
      */
     public function bind($name, $class, $context = null)
     {
@@ -112,12 +107,13 @@ class Container
         } else {
             list($contextClass, $contextMethod) = explode('::', $context);
             isset($this->contextBindings[$contextClass]) || $this->contextBindings[$contextClass] = [];
-            $this->contextBindings[$contextClass] = [
+            $key = $contextMethod ?: 'general';
+            $this->contextBindings[$key] = [
                 'original' => $name,
                 'bind' => $class,
-                'method' => $contextMethod ?: false
             ];
         }
+        return $this;
     }
 
     /**
@@ -161,6 +157,7 @@ class Container
             $this->instance($name, $definition); //如果$definition是实例的话则只能单例
         } elseif (is_string($definition)) {
             $this->bind($name, $definition);
+            $share && $this->share($name);
         } elseif ($definition instanceof Definition) {
             $this->setDefinition($name, $definition, $share);
         } else {
@@ -191,18 +188,27 @@ class Container
      */
     public function share($name)
     {
+        //兼容旧的api，给出移除提示
+        if (func_num_args() == 2) {
+            trigger_error("Use set instead, Now share only expects one argument", E_USER_DEPRECATED);
+            $arguments = func_get_args();
+            $arguments[] = true;
+            return call_user_func_array([$this, 'set'], $arguments);
+        }
         $this->shares[$name] = null;
         return $this;
     }
 
     /**
      * 为指定类设置一个别名
-     * @param string $original
      * @param string $alias
+     * @param string $original
+     * @return $this
+     * @deprecated duplication,use bind instead
      */
-    public function alias($original, $alias)
+    public function alias($alias, $original)
     {
-        $this->aliases[$alias] = $original;
+        return $this->bind($alias, $original);
     }
 
     /**
@@ -211,33 +217,40 @@ class Container
      * @param array $arguments 传递给类的构造参数，会覆盖预先定义的同名参数
      * @return object
      */
-    public function get($name, array $arguments = [])
+    public function get($name, $arguments = [])
     {
-        $class = $this->resolveAlias($name);
+        //兼容旧的api
+        if (is_bool($arguments)) {
+            trigger_error("Argument 'new' has been deprecated", E_USER_DEPRECATED);
+            $forceNewInstance  = $arguments;
+            $arguments = [];
+        } else {
+            $forceNewInstance = false;
+        }
         //如果单例的话直接返回实例结果
-        if (isset($this->shares[$class])) {
-            return $this->shares[$class];
+        if (isset($this->shares[$name]) && !$forceNewInstance) {
+            return $this->shares[$name];
         }
         //如果没有设置实例化指令的代理则为其设置代理
-        if (!isset($this->definitions[$class])) {
-            $this->delegate($class, function () use ($class, $arguments) {
-                list(, $instance) =  $this->createReflectionAndInstance($class, $arguments);
+        if (!isset($this->definitions[$name])) {
+            $this->delegate($name, function () use ($name, $arguments) {
+                list(, $instance) = $this->createReflectionAndInstance($name, $arguments);
                 return $instance;
             });
         }
-        $definition = $this->definitions[$class];
+        $definition = $this->definitions[$name];
         if (is_callable($definition)) {
             $instance = call_user_func($definition, $this, $arguments);
+        } elseif ($definition instanceof Definition) {
+            $instance = $this->createFromDefinition($definition, $arguments);
         } elseif (is_object($definition)) {
             $instance = $definition;
-        } elseif (is_string($definition)) {
-            list(, $instance) = $this->createReflectionAndInstance($definition, $arguments);
         } else {
-            $instance = $this->createFromDefinition($definition, $arguments);
+            list(, $instance) = $this->createReflectionAndInstance($definition, $arguments);
         }
         //如果设置了单例则缓存实例
-        if (isset($this->shares[$class])) {
-            $this->shares[$class] = $instance;
+        if (array_key_exists($name, $this->shares)) {
+            $this->shares[$name] = $instance;
         }
         return $instance;
     }
@@ -252,8 +265,7 @@ class Container
      */
     public function create($name, $arguments = [])
     {
-        $class = $this->resolveAlias($name);
-        list(, $instance) =  $this->createReflectionAndInstance($class, $arguments);
+        list(, $instance) = $this->createReflectionAndInstance($name, $arguments);
         return $instance;
     }
 
@@ -331,7 +343,9 @@ class Container
         $reflection = $this->reflectClass($class);
         $constructor = $reflection->getConstructor();
         if (!is_null($constructor)) {
-            $constructorArgs = $this->resolveMethodArguments($constructor, $this->resolveParameters($arguments));
+            $contextBindings = $this->getContextBindings($class, $constructor->getName());
+            $constructorArgs = $this->resolveMethodArguments($constructor, $this->resolveParameters($arguments),
+                $contextBindings);
             $instance = $reflection->newInstanceArgs($constructorArgs);
         } else {
             $instance = $reflection->newInstanceWithoutConstructor();
@@ -352,7 +366,10 @@ class Container
                     $method
                 ));
             }
-            $reflectionMethod->invokeArgs($instance, $this->resolveMethodArguments($reflectionMethod, $methodArguments));
+            //获取该方法下所有可用的绑定
+            $contextBindings = $this->getContextBindings($reflection->getName(), $method);
+            $reflectionMethod->invokeArgs($instance,
+                $this->resolveMethodArguments($reflectionMethod, $methodArguments, $contextBindings));
         }
         // 触发属性
         foreach ($definition->getProperties() as $propertyName => $propertyValue) {
@@ -367,11 +384,12 @@ class Container
             }
         }
     }
+
     /**
      * 处理方法所需要的参数
      * @param \ReflectionMethod $method
      * @param array $arguments
-     * @param array $contextBindings
+     * @param array $contextBindings 该方法定义的所有依赖绑定
      * @throws DependencyInjectionException
      * @return array
      */
@@ -387,8 +405,9 @@ class Container
             if (isset($arguments[$index])) {
                 $constructorArgs[] = $arguments[$index];
             } elseif (($dependency = $parameter->getClass()) != null) {
-                $contextBinding = end($contextBindings);
-                $dependencyName = $contextBinding ? $contextBinding['bind'] : $dependency->getName();
+                $dependencyName = $dependency->getName();
+                //如果该依赖已经重新映射到新的依赖上则修改依赖为新指向
+                isset($contextBindings[$dependencyName]) && $dependencyName = $contextBindings[$dependencyName];
                 $constructorArgs[] = $this->get($dependencyName);
             } elseif ($parameter->isOptional()) {
                 $constructorArgs[] = $parameter->getDefaultValue();
@@ -408,26 +427,22 @@ class Container
      *     'User' => [
      *          'original' => 'SchoolInterface'
      *          'bind' => 'MagicSchool',
-     *          'method' => false
      *     ]
      * ]
-     * @param $context
-     * @param $original
-     * @param $methodName
+     * @param string $context
+     * @param string $methodName
      * @return mixed
      */
-    protected function getContextBindings($context, $original = null, $methodName = null)
+    protected function getContextBindings($context, $methodName)
     {
-        $contextBindings = isset($this->contextBindings[$context]) ? $this->contextBindings[$context] : [];
-        return array_filter($contextBindings, function($binding) use ($original, $methodName){
-            if ($original && $binding['original'] != $original) {
-                return false;
-            }
-            if ($methodName && $binding['method'] != $methodName) {
-                return false;
-            }
-            return true;
-        });
+        if (!isset($this->contextBindings[$context])) {
+            return [];
+        }
+        $contextBindings = isset($this->contextBindings[$context]['general']) ? $this->contextBindings[$context]['general'] : [];
+        if (isset($this->contextBindings[$context][$methodName])) {
+            $contextBindings = array_merge($contextBindings, $this->contextBindings[$context][$methodName]);
+        }
+        return $contextBindings;
     }
 
     /**
@@ -489,15 +504,5 @@ class Container
             throw new DependencyInjectionException(sprintf('Class "%s" is invalid', $className));
         }
         return $reflection;
-    }
-
-    /**
-     * 处理alias，或者别名指向的真实类名
-     * @param string $alias
-     * @return string
-     */
-    protected function resolveAlias($alias)
-    {
-        return isset($this->aliases[$alias]) ? $this->aliases[$alias] : $alias;
     }
 }

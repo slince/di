@@ -6,6 +6,8 @@ use Slince\Di\Definition;
 use Slince\Di\Reference;
 use Slince\Di\Tests\TestClass\Director;
 
+error_reporting(E_ALL ^ E_USER_DEPRECATED);
+
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
     /**
