@@ -6,6 +6,7 @@ use Slince\Di\Definition;
 use Slince\Di\Reference;
 use Slince\Di\Tests\TestClass\Director;
 
+//取消废弃错误提示
 error_reporting(E_ALL ^ E_USER_DEPRECATED);
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
@@ -26,11 +27,19 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->container = new Container();
     }
 
+    /**
+     * create方法已经废弃，请直接使用get方法获取实例
+     * @deprecated
+     */
     public function testCreate()
     {
         $this->assertInstanceOf(static::DIRECTOR_CLASS, $this->container->create(static::DIRECTOR_CLASS, ['ZhangSan', 26]));
     }
 
+    /**
+     * 别名方法已经废弃，请直接使用bind方法绑定
+     * @deprecated
+     */
     public function testAlias()
     {
         $this->container->alias('movie', static::MOVIE_CLASS);

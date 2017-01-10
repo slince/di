@@ -30,9 +30,15 @@ class Container
 
     /**
      * 参数集合
-     * @var array
+     * @var ParameterStore
      */
-    protected $parameters;
+    protected $parameterStore;
+
+    public function __construct()
+    {
+        //全局参数存储
+        $this->parameterStore = new ParameterStore();
+    }
 
     /**
      * 给指定类或者别名指向类设置实例化向导
@@ -275,16 +281,16 @@ class Container
      */
     public function getParameters()
     {
-        return $this->parameters;
+        return $this->parameterStore->toArray();
     }
 
     /**
      * 设置预定义参数
-     * @param array $parameters
+     * @param array $parameterStore
      */
-    public function setParameters(array $parameters)
+    public function setParameters(array $parameterStore)
     {
-        $this->parameters = $parameters;
+        $this->parameterStore->setParameters($parameterStore);
     }
 
     /**
@@ -293,7 +299,7 @@ class Container
      */
     public function addParameters(array $parameters)
     {
-        $this->parameters = array_replace($this->parameters, $parameters);
+        $this->parameterStore->addParameters($parameters);
     }
 
     /**
@@ -303,7 +309,7 @@ class Container
      */
     public function setParameter($name, $value)
     {
-        $this->parameters[$name] = $value;
+        $this->parameterStore->setParameter($name, $value);
     }
 
     /**
@@ -314,7 +320,7 @@ class Container
      */
     public function getParameter($name, $default = null)
     {
-        return isset($this->parameters[$name]) ? $this->parameters[$name] : $default;
+        return $this->parameterStore->getParameter($name, $default);
     }
 
     /**
@@ -476,15 +482,16 @@ class Container
         //%xx%类型的直接返回对应的参数
         if (preg_match("#^%([^%\s]+)%$#", $value, $match)) {
             $key = $match[1];
-            if (isset($this->parameters[$key])) {
-                return $this->parameters[$key];
+            if ($parameter = $this->parameterStore->getParameter($key)) {
+                return $parameter;
             }
             throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
         }
+        //"fool%bar%baz"
         return preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
             $key = $matches[1];
-            if (isset($this->parameters[$key])) {
-                return $this->parameters[$key];
+            if ($parameter = $this->parameterStore->getParameter($key)) {
+                return $parameter;
             }
             throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
         }, $value);
