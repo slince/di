@@ -7,11 +7,29 @@ class Movie
 
     protected $time;
 
+    /**
+     * 导演
+     * @var Director
+     */
     protected $director;
 
-    public function __construct(Director $director)
+    /**
+     * 男演员
+     * @var ActorInterface
+     */
+    protected $actor;
+
+
+    /**
+     * 女演员
+     * @var ActorInterface
+     */
+    protected $actress;
+
+    public function __construct(Director $director, ActorInterface $actor)
     {
         $this->director = $director;
+        $this->actor = $actor;
     }
 
     /**
@@ -44,5 +62,37 @@ class Movie
     public function getTime()
     {
         return $this->time;
+    }
+
+    /**
+     * @return Director
+     */
+    public function getDirector()
+    {
+        return $this->director;
+    }
+
+    /**
+     * 设置女演员
+     * @param ActorInterface $actress
+     */
+    public function setActress(ActorInterface $actress) {
+        $this->actress = $actress;
+    }
+
+    /**
+     * @return ActorInterface
+     */
+    public function getActor()
+    {
+        return $this->actor;
+    }
+
+    /**
+     * @return ActorInterface
+     */
+    public function getActress()
+    {
+        return $this->actress;
     }
 }

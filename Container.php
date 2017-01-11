@@ -17,7 +17,7 @@ class Container
     protected $shares = [];
 
     /**
-     * 预定义的依赖,支持instance、callable、Definition
+     * 预定义的依赖,支持instance、callable、Definition、class
      * @var array
      */
     protected $definitions = [];
@@ -112,12 +112,9 @@ class Container
             $this->definitions[$name] = $class;
         } else {
             list($contextClass, $contextMethod) = explode('::', $context);
-            isset($this->contextBindings[$contextClass]) || $this->contextBindings[$contextClass] = [];
             $key = $contextMethod ?: 'general';
-            $this->contextBindings[$key] = [
-                'original' => $name,
-                'bind' => $class,
-            ];
+            isset($this->contextBindings[$contextClass][$key]) || $this->contextBindings[$contextClass][$key] = [];
+            $this->contextBindings[$contextClass][$key][$name] = $class;
         }
         return $this;
     }
