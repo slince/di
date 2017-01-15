@@ -15,7 +15,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
 {
     public function getContainer()
     {
-       return new Container();
+        return new Container();
     }
 
     /**
@@ -138,6 +138,21 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($container->get('director2') === $container->get('director2'));
     }
 
+    public function testGetWithArguments()
+    {
+        $container = $this->getContainer();
+        $director = $container->get(Director::class, [
+            'age' => 26
+        ]);
+        //变量名索引
+        $this->assertEquals(26, $director->getAge());
+        //数字索引
+        $director = $container->get(Director::class, [
+            'age' => 18
+        ]);
+        $this->assertEquals(18, $director->getAge());
+    }
+
     public function testSimpleGlobalParameter()
     {
         $container = $this->getContainer();
@@ -166,5 +181,10 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         ]);
         $this->assertEquals('James', $container->get('director')->getName());
         $this->assertEquals(26, $container->get('director')->getAge());
+
+        //在get操作时传入参数
+        $this->assertEquals(26, $container->get(Director::class, [
+            'age' => '%director.age%'
+        ])->getAge());
     }
 }

@@ -240,12 +240,9 @@ class Container
         if (isset($this->shares[$name]) && !$forceNewInstance) {
             return $this->shares[$name];
         }
-        //如果没有设置实例化指令的代理则为其设置代理
+        //如果没有设置实例化指令的代理则认为当前提供的即是class，为其创建一条指向自身的bind
         if (!isset($this->definitions[$name])) {
-            $this->delegate($name, function () use ($name, $arguments) {
-                list(, $instance) = $this->createReflectionAndInstance($name, $arguments);
-                return $instance;
-            });
+            $this->bind($name, $name);
         }
         $definition = $this->definitions[$name];
         if (is_callable($definition)) {
@@ -356,8 +353,11 @@ class Container
         }
         $constructor = $reflection->getConstructor();
         if (!is_null($constructor)) {
-            $constructorArgs = $this->resolveMethodArguments($constructor,
-                $this->resolveParameters($arguments), $this->getContextBindings($class, $constructor->getName()));
+            $constructorArgs = $this->resolveMethodArguments(
+                $constructor,
+                $this->resolveParameters($arguments),
+                $this->getContextBindings($class, $constructor->getName())
+            );
             $instance = $reflection->newInstanceArgs($constructorArgs);
         } else {
             $instance = $reflection->newInstanceWithoutConstructor();
@@ -380,8 +380,10 @@ class Container
             }
             //获取该方法下所有可用的绑定
             $contextBindings = $this->getContextBindings($reflection->getName(), $method);
-            $reflectionMethod->invokeArgs($instance,
-                $this->resolveMethodArguments($reflectionMethod, $methodArguments, $contextBindings));
+            $reflectionMethod->invokeArgs(
+                $instance,
+                $this->resolveMethodArguments($reflectionMethod, $methodArguments, $contextBindings)
+            );
         }
         // 触发属性
         foreach ($definition->getProperties() as $propertyName => $propertyValue) {

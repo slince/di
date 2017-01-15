@@ -76,7 +76,8 @@ class Movie
      * 设置女演员
      * @param ActorInterface $actress
      */
-    public function setActress(ActorInterface $actress) {
+    public function setActress(ActorInterface $actress)
+    {
         $this->actress = $actress;
     }
 

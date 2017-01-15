@@ -2,26 +2,26 @@
 namespace Slince\Di\Tests;
 
 use Slince\Di\Definition;
+use Slince\Di\Tests\TestClass\Director;
 
 class DefinitionTest extends \PHPUnit_Framework_TestCase
 {
-    protected $class = '\Slince\Di\Tests\TestClass\Director';
 
-    protected function createDefinition($className, $arguments = [], $methodCalls = [])
+    protected function createDefinition($class, $arguments = [], $methodCalls = [])
     {
-        return new Definition($className, $arguments, $methodCalls);
+        return new Definition($class, $arguments, $methodCalls);
     }
     
     public function testSetAndGetArgument()
     {
-        $definition = $this->createDefinition($this->class);
+        $definition = $this->createDefinition(Director::class);
         $definition->setArgument(0, 'LiAn');
         $this->assertEquals('LiAn', $definition->getArgument(0));
     }
 
     public function testSetAndGetArguments()
     {
-        $definition = $this->createDefinition($this->class);
+        $definition = $this->createDefinition(Director::class);
         $arguments = ['Jumi', 12];
         $definition->setArguments($arguments);
         $this->assertEquals($arguments, $definition->getArguments());
@@ -29,14 +29,14 @@ class DefinitionTest extends \PHPUnit_Framework_TestCase
 
     public function testSetAndGetMethodCall()
     {
-        $definition = $this->createDefinition($this->class);
+        $definition = $this->createDefinition(Director::class);
         $definition->setMethodCall('setName', ['LiAn']);
         $this->assertEquals(['LiAn'], $definition->getMethodCall('setName'));
     }
 
     public function testSetAndGetMethodCalls()
     {
-        $definition = $this->createDefinition($this->class);
+        $definition = $this->createDefinition(Director::class);
         $methodCalls = [
             'setName' => ['LiAn'],
             'setAge' => [18],
