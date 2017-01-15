@@ -20,7 +20,7 @@ class Definition
     protected $arguments = [];
 
     /**
-     * setter函数
+     * setter方法
      * @var array
      */
     protected $calls = [];
@@ -31,9 +31,9 @@ class Definition
      */
     protected $properties = [];
 
-    public function __construct($className, array $arguments = [], array $calls = [], array $properties = [])
+    public function __construct($class, array $arguments = [], array $calls = [], array $properties = [])
     {
-        $this->class = $className;
+        $this->class = $class;
         $this->arguments = $arguments;
         $this->calls = $calls;
         $this->properties = $properties;
@@ -83,9 +83,9 @@ class Definition
     }
 
     /**
-     * 设置一个setter函数
+     * 设置一个setter方法
      * @param string $method
-     * @param array $arguments
+     * @param array $arguments 方法所需要的参数，只需要给出标量依赖即可
      * @return $this
      */
     public function setMethodCall($method, array $arguments)
@@ -95,7 +95,7 @@ class Definition
     }
 
     /**
-     * 批量设置构造参数
+     * 批量设置setter方法
      * @param array $calls
      * @return $this
      */
@@ -106,7 +106,7 @@ class Definition
     }
 
     /**
-     * 获取setter函数
+     * 获取setter方法
      * @return array
      */
     public function getMethodCalls()
@@ -115,7 +115,7 @@ class Definition
     }
 
     /**
-     * 获取指定函数名下的参数
+     * 获取指定函数名下的方法
      * @param string $method
      * @return array|null
      */

@@ -42,15 +42,16 @@ class Container
 
     /**
      * 给指定类或者别名指向类设置实例化向导
-     * @param string $name 被定义的类名或者别名
-     * @param $arguments
-     * @param array $properties
-     * @param array $methodCalls
+     * @param string $name
+     * @param string $class 类名
+     * @param array $arguments 构造函数
+     * @param array $methodCalls setter注入
+     * @param array $properties 属性注入
      * @return Definition
      */
-    public function define($name, $arguments, array $properties = [], array $methodCalls = [])
+    public function define($name, $class, array $arguments, array $methodCalls = [], array $properties = [])
     {
-        $definition = new Definition($name, $arguments, $properties, $methodCalls);
+        $definition = new Definition($class, $arguments, $methodCalls, $properties);
         $this->setDefinition($name, $definition);
         return $definition;
     }
@@ -102,7 +103,7 @@ class Container
      * 将name直接绑定到某个指定存在的类（可用来绑定接口或者抽象类与实现类）
      * @param string $name
      * @param string $class 一个可被实例化的类名
-     * @param string $context 为指定的上下文设置绑定指令
+     * @param string|array $context 为指定的上下文设置绑定指令
      * @throws ConfigException
      * @return $this
      */
@@ -111,10 +112,15 @@ class Container
         if (is_null($context)) {
             $this->definitions[$name] = $class;
         } else {
-            list($contextClass, $contextMethod) = explode('::', $context);
-            $key = $contextMethod ?: 'general';
-            isset($this->contextBindings[$contextClass][$key]) || $this->contextBindings[$contextClass][$key] = [];
-            $this->contextBindings[$contextClass][$key][$name] = $class;
+            if (is_array($context)) {
+                list($contextClass, $contextMethod) = $context;
+            } else {
+                $contextClass = $class;
+                $contextMethod = 'general';
+            }
+            isset($this->contextBindings[$contextClass][$contextMethod])
+                || ($this->contextBindings[$contextClass][$contextMethod] = []);
+            $this->contextBindings[$contextClass][$contextMethod][$name] = $class;
         }
         return $this;
     }
@@ -339,11 +345,15 @@ class Container
      * 构建实例
      * @param string $class
      * @param array $arguments
+     * @throws DependencyInjectionException
      * @return array
      */
     protected function createReflectionAndInstance($class, array $arguments)
     {
         $reflection = $this->reflectClass($class);
+        if (!$reflection->isInstantiable()) {
+            throw new DependencyInjectionException(sprintf("Can not instantiate [%s]", $class));
+        }
         $constructor = $reflection->getConstructor();
         if (!is_null($constructor)) {
             $contextBindings = $this->getContextBindings($class, $constructor->getName());

@@ -2,148 +2,121 @@
 namespace Slince\Di\Tests;
 
 use Slince\Di\Container;
-use Slince\Di\Definition;
-use Slince\Di\Reference;
+use Slince\Di\Exception\DependencyInjectionException;
+use Slince\Di\Tests\TestClass\Actor;
+use Slince\Di\Tests\TestClass\ActorInterface;
+use Slince\Di\Tests\TestClass\Actress;
 use Slince\Di\Tests\TestClass\Director;
-
-//取消废弃错误提示
-error_reporting(E_ALL ^ E_USER_DEPRECATED);
+use Slince\Di\Tests\TestClass\Movie;
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
-    /**
-     * @var Container
-     */
-    protected $container;
-
-    const DIRECTOR_CLASS = '\Slince\Di\Tests\TestClass\Director';
-
-    const ACTOR_CLASS = '\Slince\Di\Tests\TestClass\Actor';
-
-    const MOVIE_CLASS = '\Slince\Di\Tests\TestClass\Movie';
-
-    public function setUp()
+    public function getContainer()
     {
-        $this->container = new Container();
+       return new Container();
     }
 
     /**
-     * create方法已经废弃，请直接使用get方法获取实例
-     * @deprecated
+     * 自定义闭包或者工厂方法代理
      */
-    public function testCreate()
+    public function testDelegate()
     {
-        $this->assertInstanceOf(static::DIRECTOR_CLASS, $this->container->create(static::DIRECTOR_CLASS, ['ZhangSan', 26]));
+        $container = $this->getContainer();
+        $container->delegate('director1', function () {
+            return new Director('张三', 26);
+        });
+        $this->assertInstanceOf(Director::class, $container->get('director1'));
+        $container->delegate('director2', [Director::class, 'factory']); //或者 'Slince\Di\Tests\TestClass\Director::factory'
+        $this->assertInstanceOf(Director::class, $container->get('director2'));
     }
 
     /**
-     * 别名方法已经废弃，请直接使用bind方法绑定
-     * @deprecated
+     * 测试对象绑定，对象绑定结果是单例
      */
-    public function testAlias()
+    public function testInstance()
     {
-        $this->container->alias('movie', static::MOVIE_CLASS);
-        $this->assertInstanceOf(static::MOVIE_CLASS, $this->container->get('movie'));
+        $container = $this->getContainer();
+        $director = new Director();
+        $container->instance('director', $director);
+        $this->assertInstanceOf(Director::class, $container->get('director'));
+        $this->assertTrue($container->get('director') === $director);
+        //instance只能是单例
+        $this->assertTrue($container->get('director') === $container->get('director'));
     }
 
-    public function testSet()
+    /**
+     * 类名<=>别名，interface <=> implement绑定
+     */
+    public function testSimpleBind()
     {
-        $this->container->set('director', function () {
-            return new Director('张三', 26);
-        });
-        $this->assertInstanceOf(static::DIRECTOR_CLASS, $this->container->get('director'));
+        $container = $this->getContainer();
+        //简单的别名绑定
+        $container->bind('director', Director::class);
+        $this->assertInstanceOf(Director::class, $container->get('director'));
+        //兼容旧版本别名绑定
+        $container->alias('director2', Director::class);
+        $this->assertInstanceOf(Director::class, $container->get('director2'));
     }
 
-    public function testShare()
+    /**
+     * 绑定接口与实现
+     */
+    public function testInterfaceBind()
     {
-        $this->container->set('director', function () {
-            return new Director('张三', 26);
-        });
-        $this->assertFalse($this->container->get('director') === $this->container->get('director'));
-        $this->container->share('director', function () {
-            return new Director('张三', 26);
-        });
-        $this->assertTrue($this->container->get('director') === $this->container->get('director'));
-        $this->assertFalse($this->container->get('director', true) === $this->container->get('director', true));
+        $container = $this->getContainer();
+        //接口与实现；类绑定
+        $container->bind(ActorInterface::class, Actor::class);
+        //直接获取接口实例
+        $this->assertInstanceOf(Actor::class, $container->get(ActorInterface::class));
+        //获取依赖该接口的类实例
+        $movie = $container->get(Movie::class);
+        $this->assertInstanceOf(Movie::class, $movie);
+        $this->assertInstanceOf(Actor::class, $movie->getActor());
     }
 
-    public function testSimpleGet()
+    /**
+     * 为类设置接口依赖
+     */
+    public function testClassContextBind()
     {
-        $this->assertInstanceOf(static::MOVIE_CLASS, $this->container->get(static::MOVIE_CLASS));
-    }
 
-    public function testGetWithDefinition()
-    {
-        $this->container->setDefinition('director', new Definition(static::DIRECTOR_CLASS, ['LieJie', 16]));
-        $this->assertInstanceOf(static::DIRECTOR_CLASS, $this->container->get('director'));
-    }
+        $container = $this->getContainer();
+        //为Movie类声明接口实际指向
+        $container->bind(ActorInterface::class, Actor::class, Movie::class);
 
-    public function testGetWithDefinitionReference()
-    {
-        $this->container->setDefinition('director', new Definition(static::DIRECTOR_CLASS, ['LieJie', 16]));
-        $this->container->setDefinition('movie', new Definition(static::MOVIE_CLASS, [
-            new Reference('director')
-        ]));
-        $this->assertInstanceOf(static::MOVIE_CLASS, $this->container->get('movie'));
-    }
-
-    public function testParameters()
-    {
-        $this->container->setParameters([
-            'foo' => 'bar'
+        //获取依赖该接口的类实例，由于构造方法与setter皆是类依赖故container可以自动解决
+        $container->define('movie', Movie::class, [], [
+            'setActress' => []
         ]);
-        $this->assertEquals('bar', $this->container->getParameter('foo'));
-        $this->container->addParameters([
-           'foo' => 'bar1'
-        ]);
-        $this->assertEquals('bar1', $this->container->getParameter('foo'));
-        $this->container->setParameter('foo', 'bar2');
-        $this->assertEquals('bar2', $this->container->getParameter('foo'));
+
+        $movie = $container->get('movie');
+        $this->assertInstanceOf(Movie::class, $movie);
+        $this->assertInstanceOf(Actor::class, $movie->getActor());
+        $this->assertInstanceOf(Actor::class, $movie->getActress());
+
+        //直接获取接口实例,会报出异常
+        $this->setExpectedException(DependencyInjectionException::class);
+        $this->assertInstanceOf(Actor::class, $container->get(ActorInterface::class));
     }
 
-    public function testGetWithArguments()
+    /**
+     * 为类方法设置接口依赖
+     */
+    public function testClassMethodContextBind()
     {
-        $this->container->setParameters([
-            'name' => 'LiAn',
-            'age' => 48
-        ]);
-        $this->container->setDefinition('director', new Definition(static::DIRECTOR_CLASS, [
-            '%name%',
-            '%age%'
-        ]));
-        $director = $this->container->get('director');
-        $this->assertEquals('LiAn', $director->getName());
-        $this->assertEquals(48, $director->getAge());
-    }
+        $container = $this->getContainer();
 
-    public function testGetWithMethodCallArguments()
-    {
-        $this->container->setParameters([
-            'name' => 'LiAn',
-            'age' => 48
-        ]);
-        $this->container->setDefinition('director', new Definition(static::DIRECTOR_CLASS))
-            ->setMethodCall('setName', ['%name%'])
-            ->setMethodCall('setAge', ['%age%']);
-        $director = $this->container->get('director');
-        $this->assertEquals('LiAn', $director->getName());
-        $this->assertEquals(48, $director->getAge());
-    }
+        //为Movie类声明接口依赖
+        $container->bind(ActorInterface::class, Actor::class, [Movie::class, '__construct']); //构造函数
+        $container->bind(ActorInterface::class, Actress::class, [Movie::class, 'setActress']); //setter方法
 
-    public function testRecursiveParameters()
-    {
-        $this->container->setParameter('actor.profile.firstname', 'Jack');
-        $this->container->setParameter('actor.profile.lastname', 'Chen');
-        $this->container->setParameter('actor.profile.username', '%actor.profile.firstname% %actor.profile.lastname%');
-        $this->container->setParameter('actor.profile.name', 'Jack');
-        $this->container->setDefinition('actor', new Definition(static::ACTOR_CLASS, [
-            [
-                'fistname' => '%actor.profile.firstname%',
-                'username' => '%actor.profile.username%',
-            ]
-        ]));
-        $profile = $this->container->get('actor')->getProfile();
-        $this->assertEquals('Jack', $profile['fistname']);
-        $this->assertEquals('Jack Chen', $profile['username']);
+        //获取依赖该接口的类实例，由于构造方法与setter皆是类依赖故container可以自动解决
+        $container->define('movie', Movie::class, [], [
+            'setActress' => []
+        ]);
+        $movie = $container->get('movie');
+        $this->assertInstanceOf(Movie::class, $movie);
+        $this->assertInstanceOf(Actor::class, $movie->getActor());
+        $this->assertInstanceOf(Actress::class, $movie->getActress());
     }
 }
