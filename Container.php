@@ -115,7 +115,7 @@ class Container
             if (is_array($context)) {
                 list($contextClass, $contextMethod) = $context;
             } else {
-                $contextClass = $class;
+                $contextClass = $context;
                 $contextMethod = 'general';
             }
             isset($this->contextBindings[$contextClass][$contextMethod])
@@ -356,9 +356,8 @@ class Container
         }
         $constructor = $reflection->getConstructor();
         if (!is_null($constructor)) {
-            $contextBindings = $this->getContextBindings($class, $constructor->getName());
-            $constructorArgs = $this->resolveMethodArguments($constructor, $this->resolveParameters($arguments),
-                $contextBindings);
+            $constructorArgs = $this->resolveMethodArguments($constructor,
+                $this->resolveParameters($arguments), $this->getContextBindings($class, $constructor->getName()));
             $instance = $reflection->newInstanceArgs($constructorArgs);
         } else {
             $instance = $reflection->newInstanceWithoutConstructor();
@@ -442,18 +441,19 @@ class Container
      *          'bind' => 'MagicSchool',
      *     ]
      * ]
-     * @param string $context
-     * @param string $methodName
+     * @param string $contextClass
+     * @param string $contextMethod
      * @return mixed
      */
-    protected function getContextBindings($context, $methodName)
+    protected function getContextBindings($contextClass, $contextMethod)
     {
-        if (!isset($this->contextBindings[$context])) {
+        if (!isset($this->contextBindings[$contextClass])) {
             return [];
         }
-        $contextBindings = isset($this->contextBindings[$context]['general']) ? $this->contextBindings[$context]['general'] : [];
-        if (isset($this->contextBindings[$context][$methodName])) {
-            $contextBindings = array_merge($contextBindings, $this->contextBindings[$context][$methodName]);
+        $contextBindings = isset($this->contextBindings[$contextClass]['general'])
+            ? $this->contextBindings[$contextClass]['general'] : [];
+        if (isset($this->contextBindings[$contextClass][$contextMethod])) {
+            $contextBindings = array_merge($contextBindings, $this->contextBindings[$contextClass][$contextMethod]);
         }
         return $contextBindings;
     }

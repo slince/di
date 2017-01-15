@@ -9,6 +9,8 @@ use Slince\Di\Tests\TestClass\Actress;
 use Slince\Di\Tests\TestClass\Director;
 use Slince\Di\Tests\TestClass\Movie;
 
+error_reporting(E_ALL ^ E_USER_DEPRECATED);
+
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
     public function getContainer()
@@ -23,7 +25,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     {
         $container = $this->getContainer();
         $container->delegate('director1', function () {
-            return new Director('张三', 26);
+            return new Director('James', 26);
         });
         $this->assertInstanceOf(Director::class, $container->get('director1'));
         $container->delegate('director2', [Director::class, 'factory']); //或者 'Slince\Di\Tests\TestClass\Director::factory'
@@ -105,7 +107,6 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     public function testClassMethodContextBind()
     {
         $container = $this->getContainer();
-
         //为Movie类声明接口依赖
         $container->bind(ActorInterface::class, Actor::class, [Movie::class, '__construct']); //构造函数
         $container->bind(ActorInterface::class, Actress::class, [Movie::class, 'setActress']); //setter方法
@@ -118,5 +119,52 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf(Movie::class, $movie);
         $this->assertInstanceOf(Actor::class, $movie->getActor());
         $this->assertInstanceOf(Actress::class, $movie->getActress());
+    }
+
+    public function testShare()
+    {
+        $container = $this->getContainer();
+        $container->delegate('director', function () {
+            return new Director('James', 26);
+        });
+        $container->share('director');
+        $this->assertInstanceOf(Director::class, $container->get('director'));
+        $this->assertTrue($container->get('director') === $container->get('director'));
+
+        //兼容旧的api,已提示废除
+        $container->share('director2', function () {
+            return new Director('James', 26);
+        });
+        $this->assertTrue($container->get('director2') === $container->get('director2'));
+    }
+
+    public function testSimpleGlobalParameter()
+    {
+        $container = $this->getContainer();
+        $container->setParameters([
+            'directorName' => 'James'
+        ]);
+        $container->delegate('director', function (Container $container) {
+            return new Director($container->getParameter('directorName'), 26);
+        });
+        $this->assertEquals('James', $container->get('director')->getName());
+    }
+
+    public function testGlobalParameter()
+    {
+        $container = $this->getContainer();
+        $container->setParameters([
+            'directorName' => 'James',
+            'director' => [ //支持点号获取深度数据结构
+                'age' => 26
+            ]
+        ]);
+        //支持点号访问
+        $container->define('director', Director::class, [
+            '%directorName%',
+            '%director.age%'
+        ]);
+        $this->assertEquals('James', $container->get('director')->getName());
+        $this->assertEquals(26, $container->get('director')->getAge());
     }
 }
