@@ -1,148 +1,193 @@
 ﻿# Dependency Injection Component
 
-[![Build Status](https://travis-ci.org/slince/di.svg?branch=master)](https://travis-ci.org/slince/di)
-[![Latest Stable Version](https://poser.pugx.org/slince/di/v/stable)](https://packagist.org/packages/slince/di)
-[![Total Downloads](https://poser.pugx.org/slince/di/downloads)](https://packagist.org/packages/slince/di)
-[![Latest Unstable Version](https://poser.pugx.org/slince/di/v/unstable)](https://packagist.org/packages/slince/di)
-[![License](https://poser.pugx.org/slince/di/license)](https://packagist.org/packages/slince/di)
+[![Build Status](https://img.shields.io/travis/slince/di/master.svg?style=flat-square)](https://travis-ci.org/slince/di)
+[![Coverage Status](https://img.shields.io/codecov/c/github/slince/di.svg?style=flat-square)](https://codecov.io/github/slince/di)
+[![Total Downloads](https://img.shields.io/packagist/dt/slince/di.svg?style=flat-square)](https://packagist.org/packages/slince/di)
+[![Latest Stable Version](https://img.shields.io/packagist/v/slince/di.svg?style=flat-square&label=stable)](https://packagist.org/packages/slince/di)
 
-这是一个依赖注入组件，通过简单的实现即可让类的实例化过程变得简单；
+依赖注入组件是一个灵活的IOC容器，通过一些配置即可实现类的实例化工作
 
 ## 安装
 
-在composer.json中添加
+执行下面命令
 ```
-{
-    "require": {
-        "slince/di": "*"
-    }
-}
+composer require slince/di
 ```
 ## 用法
 
-为了适应不同的场景，组件采用多种方法帮助获取实例，以下是三种方式案例
-
-### 1、通过实例绑定
+### 创建IOC容器
 ```
-class Reader
+use Slince\Di\Container;
+
+$container = new Container();
+```
+
+为了更好的说明接下来的api我们假设有有一些类，Movie, Director, Actor, Actress, ActorInterface，代码如下：
+
+```
+interface ActorInterface
 {
-    public function read()
-    {}
 }
 
-$di = new Slince\Di\Container();
-$di->set('Reader', function () {
-    return new Reader(); 
+class Actor implements ActorInterface
+{
+}
+
+class Actress implements ActorInterface
+{
+}
+
+class Director
+{
+    protected $name;
+    protected $age;
+    pubic function __construct($name, $age)
+    {
+        $this->name = $name;
+        $this->age = $age;
+    }
+    public static function factory()
+    {
+        return new static();
+    }
+}
+class Movie
+{
+    protected $director;
+    protected $actor;
+    protected $actress;
+    
+    public function __construct(Director $director, ActorInterface $actor)
+    {
+        $this->director = $director;
+        $this->actor = $actor;
+    }
+    
+    public function setActress(Actress $actress)
+    {
+        $this->actress = $actress;
+    }
+}
+
+```
+### 注入定义
+
+声明依赖注入的方式有下面四种
+
+1. 直接绑定一个类实例
+```
+$director = new Director();
+$container->instance('director', $director);
+var_dump($container->get('director') === $director); //true
+```
+直接绑定实例的话容器会自动设置为单例模式。
+
+2. 设置一个自定义的实例化指令
+```
+$container->delegate('director', function(){
+    return new Director();;
 });
-$instance = $di->get('Reader');
-//结果 bool(true)
-var_dump($instance instanceof Reader);
+var_dump($container->get('director') instanceof Director::class); //true
 ```
-如果需要定义一个共享的实例,则使用share取代set方法
-
-### 2、通过自动获取
+参数2接受一个合法的callable结构，该api适用于实例化一些只提供工厂方法的服务类
 ```
-class Reader 
-{
-    private $reader;
-
-    public function __construct(PdfReader $reader)
-    {
-        $this->reader = $reader;
-    } 
-}
-class PdfReader
-{
-}
-
-$di = new Slince\Di\Container();
-$instance = $di->get('Reader');
-//结果 bool(true)
-var_dump($instance instanceof Reader);
-```
-自动获取可以解决简单的实例依赖关系，但如果依赖是一个标量并且不是可选的，则无法完成自动注入。
-
-
-### 3、描述类
-```
-class Reader 
-{
-    private $reader;
-    private $file;
-    private $mode;
-    public function __construct(PdfReader $reader, $file)
-    {
-        $this->reader = $reader;
-        $this->file = $file;
-    }
-    public function setMode($mode)
-    {
-        $this->mode = $mode;
-    }
-}
-class PdfReader
-{}
-
-$di = new Slince\Di\Container();
-//描述
-$di->setDefinition('Reader', new Definition('Reader')->setArgument(1, 'C:/a.pdf')->setMethodCall('setMod', [1]);
-//获取实例
-$instance = $di->get('Reader');
-//结果 bool(true)
-var_dump($instance instanceof Reader);
-
-```
-对于一个依赖较多的类，只需要指出它的标量依赖即可，当然指出全部依赖亦可；如果需要共享则提供第二个参数true；以下是常用的指出依赖的方法:
-```
-1. setArgument($index, $value) //指出构造依赖. 
-2. setArguments(array $arguments) //批量指出所有依赖，会覆盖已有的定义
-3. setMethodCall($method, array $arguments) //指出setter依赖
-4. setMethodCalls(array $methodCalls) //批量指出所有setter依赖，同样会覆盖已有的定义
-```
-推荐使用类名做绑定标记，但如果类名过长，则可以给该类名设置别名，这样通过别名和类名都可以获取该类的实例
-```
-//Reader.php
-namespace I\Like\Read\Book;
-
-class Reader 
-{
-    public function read()
-    {
-        echo 'reading';
-    }
-}
-
-//client.php
-include 'Reader.php';
-$di = new Slince\Di\Container();
-$di->alias('reader', 'I\\Like\\Read\\Book\\Reader');
-$instance = $di->get('reader');
-//结果 bool(true)
-var_dump($instance instanceof I\Like\Read\Book\Reader); 
+$container->delegate('director', [Director::class, 'factory']);
+var_dump($container->get('director') instanceof Director::class); //true
 ```
 
-### 新增api
+3. 设置详细的实例化指令（构造器注入，setter注入，property注入）
+多数情况下类的依赖都是对象依赖，有些则需要提供一些非对象并且没有默认值的（即可选）依赖，这时需要告诉容器需要为
+该服务类的实例化工作提供哪些参数：
 
-#### 服务定义
-- 定义一个详细实例化指令
 ```
-Container::define 
+$container->define('director', Director::class, ['name'=>'James', 'age'=>26], [], []);
 ```
-- 定义实例化方法或者函数，例如绑定一个类的工厂方法或者自定义的闭包
+> 参数1:别名，参数2:别名实际指向的类，参数3:构造参数，参数4:setter注入，参数5:property注入
+
+提供参数有两种方式，一是通过变量名即例中所示。二种是通过位置索引即只需要给出位置索引与参数的键值对即可；如上例如果
+只需要设置导演的年纪则可以：
 ```
-Container::delegate
+$container->define('director', Director::class, [1=>26]); //参数age是第二个参数，即键值设置为1
 ```
-- 直接绑定接口
+这对需要跳过对象依赖只设置非对象依赖非常有用。
+
+setter注入：需要额外告诉容器注入方法：
+
 ```
-Container::instance
+$container->define('movie', Movie::class, [], ['setActress' => []], []);
+```
+因为Movie的构造器与`setActress`依赖的都是对象，故在此省略了实际参数。
+
+property注入：在参数5设置该类的属性名与参数值的键值对即可。
+
+4. 设置别名与可实例化类的指向关系
+
+```
+$container->bind('director', Director::class):
+$container->get('director');
+```
+> 旧版本`alias`设计与`bind`重复故新版本中已经废弃并在将来版本中移除
+
+如果直接从容器中获取没有经过预定义的别名，则容器会认为该别名并非别名而是一个可实例化的类名，并以此为别名创建一条指向自身
+的定义，因此如果不想纯粹的设置别名也可以直接从容器中获取类的实例:
+```
+$container->get(Director::class);
 ```
 
-#### 绑定一个接口到它的实现，如果有类在实例化的时候依赖到接口将会使用实现类替换
+接口注入：有些依赖并不是可实例化的类而是interface或者abstract class，因此需要告诉容器如何解决这些不可实例化的依赖
 ```
-Container::bind
+$container->bind(ActorInterface::class, Actor::class):
+```
+如果接口有多个实现类并且希望在处理不同类的依赖时实例化不同的实现类，那么需要绑定上下文：
+```
+$container->bind(ActorInterface::class, Actor::class, Movie::class):
+$container->bind(ActorInterface::class, Actress::class, OtherClass::class):
+```
+在同一个类的不同方法里设置不同的实现类：
+```
+$container->bind(ActorInterface::class, Actor::class, [Movie::class, '__construct']):
+$container->bind(ActorInterface::class, Actress::class, [Movie::class, 'setActress']):
 ```
 
-#### 设置单例模式
+以上声明注入定义的方法在使用两参数的情况下皆可使用`set`代替：
 ```
-Container:;share
+$container->set('director', new Director());
+$container->set('director', Director::class);
+$container->set('director', function(){
+    return  new Director();
+});
+//define方法替换方式有所变化
+$container->set('director', new Define(Director::class));
+```
+### 设置单例
+```
+$container->set('director', Director::class);
+$container->share('director');
+```
+或者直接
+```
+$container->set('director', Director::class, true);
+```
+旧版本中`share`的使用方式已经废弃并在将来版本中移除，建议使用set方法代替。
+
+### 全局参数
+```
+$container->setParameters([
+    'directorName' => 'James',
+    'director' => [
+        'age' => 26
+    ]
+]);
+
+//在实例化时传入
+$container->get(Director::class, [
+    'name' => '%directorName%',
+    'age' => 'director.age' //支持点号访问深层数据
+]);
+//在define时传入
+$container->define('director', Director::class, [
+    'name' => '%directorName%',
+    'age' => 'director.age' //支持点号访问深层数据
+]);
+$container->get('director');
 ```
