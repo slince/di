@@ -5,24 +5,30 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/slince/di.svg?style=flat-square)](https://packagist.org/packages/slince/di)
 [![Latest Stable Version](https://img.shields.io/packagist/v/slince/di.svg?style=flat-square&label=stable)](https://packagist.org/packages/slince/di)
 
-依赖注入组件是一个灵活的IOC容器，通过一些配置即可实现类的实例化工作
+This package is a flexible IOC container for PHP with a focus on being lightweight and fast as well as requiring as little configuration as possible.[Simplified Chinese](./README-zh_CN.md)
 
-## 安装
-
-执行下面命令
+## Installation via composer
+Add "slince/di": "~1.0" to the require block in your composer.json and then run composer install.
+```
+{
+    "require": {
+        "slince/di": "~1.0"
+    }
+}
+```
+Alternatively, require package use composer cli:
 ```
 composer require slince/di
 ```
-## 用法
+## Basic Usage
 
-### 创建IOC容器
+### Get IOC container
 ```
 use Slince\Di\Container;
 
 $container = new Container();
 ```
-
-为了更好的说明api我们假设有有一些类，Movie, Director, Actor, Actress, ActorInterface，代码如下：
+For illustration，we'll start some class and interface like this: 
 
 ```
 interface ActorInterface
@@ -70,117 +76,122 @@ class Movie
 }
 
 ```
-### 注入定义
+### Injections
 
-声明依赖注入的方式有下面四种
+The package provides the following four ways to define injections
 
-- 直接绑定一个类实例
+- Bind instance
+
 ```
 $director = new Director();
 $container->instance('director', $director);
 var_dump($container->get('director') === $director); //true
 ```
-直接绑定实例的话容器会自动设置为单例模式。
+Container will share instance by default.
 
-- 设置一个自定义的实例化指令
+- Bind callable
 ```
 $container->delegate('director', function(){
     return new Director();
 });
 var_dump($container->get('director') instanceof Director::class); //true
 ```
-参数2接受一个合法的callable结构，该api适用于实例化一些只提供工厂方法的服务类
+delegate expects a callable structure at argument 2;It is useful for instantiating some service classes that provide factory classes/methods.
 ```
 $container->delegate('director', [Director::class, 'factory']);
 var_dump($container->get('director') instanceof Director::class); //true
 ```
 
-- 设置详细的实例化指令（构造器注入，setter注入，property注入）
+- Set the detailed instantiation directives（Constructor injection，Setter injection,Property injection）
 
-多数情况下服务类的依赖都是对象，但有些则是非对象并且没有默认值的（即可选）依赖，这时需要告诉容器需要为
-该服务类的实例化工作提供哪些参数：
+In most cases, the dependencies of service classes are objects, but others are non-objects and have no default (ie, optional) dependencies. 
+In this case, you need to tell the container which parameters to provide for the instantiation of the service class:
 
 ```
 $container->define('director', Director::class, ['name'=>'James', 'age'=>26], [], []);
 ```
-> 参数1:别名，参数2:别名实际指向的类，参数3:构造参数，参数4:setter注入，参数5:property注入
+> Parameter 1: alias, parameter 2: class, parameter 3: constructor parameters, 
+> parameter 4: setter injection, parameter 5: property injection
 
-提供参数有两种方式，一是通过变量名即例中所示。二种是通过位置索引即只需要给出位置索引与参数的键值对即可；如上例如果
-只需要设置导演的年纪则可以这样写，这对需要跳过对象依赖只设置非对象依赖非常有用。
+There are two ways to provide parameters, one by variable name as shown in the example. The second is through the argument position 
+that only need to give the position and argument; as in the case if you only need to set the director of the age.
+This is useful for setting non-object dependencies only if you want to skip object dependencies.
 
 ```
-$container->define('director', Director::class, [1=>26]); //参数age是第二个参数，即键值设置为1
+$container->define('director', Director::class, [1=>26]); //The parameter age is the second parameter, the key value is set to 1
 ```
 
-如果当前服务类依赖一个已定义的服务可以使用Reference引用。
+"Reference" can be used if the current service class depends on a defined service.
 ```
 $container->define('movie', Movie::class, ['actor'=> new Reference('actor')]);
 ```
 
-
-setter注入：需要额外告诉容器setter方法，如下例;因为Movie的构造器与`setActress`依赖的都是对象，故在此省略了实际参数。
-
+Setter injection: The setter method is required, as in the following example: 
 ```
 $container->define('movie', Movie::class, [], ['setActress' => []], []);
 ```
+> Since both the Movie constructor and the setActress depend on the object, the actual arguments are omitted here.
 
 
-property注入：在参数5设置该类的属性名与参数值的键值对即可。
+Property injection: In argument 5, set the property name and value of the key-value pair.
 
 
-- 设置别名与可实例化类的指向关系
+- Bind an alias to an instantiable class
 
 ```
 $container->bind('director', Director::class):
 $container->get('director');
 ```
-> 旧版本`alias`设计与`bind`重复故新版本中已经废弃并在将来版本中移除
+> Older versions of `alias` were designed to be duplicated with` bind` so new versions are deprecated and removed in future releases
 
-如果直接从容器中获取没有经过预定义的别名，则容器会认为该别名并非别名而是一个可实例化的类名，并以此为别名创建一条指向自身
-的定义，因此如果不想纯粹的设置别名也可以直接从容器中获取类的实例:
+If you do not get a predefined alias directly from the container,the container will consider that the alias is not an alias but an instantiable class，
+And use this as an alias to create a definition of their own, so if you do not want to set the alias can also be obtained directly from the 
+container instance of the class:
 ```
 $container->get(Director::class);
 ```
 
-接口注入：有些依赖并不是可实例化的类而是interface或者abstract class，因此需要告诉容器如何解决这些不可实例化的依赖
+Interface injection: Some dependencies are not instantiable classes but interfaces or abstract classes, so you need to tell the container 
+how to resolve these non-instantiable dependencies
 ```
 $container->bind(ActorInterface::class, Actor::class):
 ```
-如果接口有多个实现类并且希望在处理不同类的依赖时实例化不同的实现类，那么需要绑定上下文：
+If an interface has more than one implementation class and wishes to instantiate different implementation classes when dealing with 
+dependencies of different classes, then the binding context：
 ```
 $container->bind(ActorInterface::class, Actor::class, Movie::class):
 $container->bind(ActorInterface::class, Actress::class, OtherClass::class):
 ```
-在同一个类的不同方法里设置不同的实现类：
+Set different implementation classes in different methods of the same class:
 ```
 $container->bind(ActorInterface::class, Actor::class, [Movie::class, '__construct']):
 $container->bind(ActorInterface::class, Actress::class, [Movie::class, 'setActress']):
 ```
 
-以上声明注入定义的方法在使用两参数的情况下皆可使用`set`代替：
+The above method of declaring the injection definition can be replaced with `set` if two parameters are used:
 ```
 $container->set('director', new Director());
 $container->set('director', Director::class);
 $container->set('director', function(){
     return  new Director();
 });
-//define方法替换方式有所变化
+//There are some changes to the define method
 $container->set('director', new Define(Director::class));
 ```
 
-### 设置单例
+### Set singleton
 
 ```
 $container->set('director', Director::class);
 $container->share('director');
 ```
-或者直接
+Or directly
 ```
 $container->set('director', Director::class, true);
 ```
-旧版本中`share`的使用方式已经废弃并在将来版本中移除，建议使用set方法代替。
+> The use of `share` in older versions is deprecated and will be removed in a future release. The use of the set method is recommended.
 
-### 全局参数
+### Global Parameters
 ```
 $container->setParameters([
     'directorName' => 'James',
@@ -189,15 +200,15 @@ $container->setParameters([
     ]
 ]);
 
-//在实例化时传入
+//when instantiated
 $container->get(Director::class, [
     'name' => '%directorName%',
-    'age' => 'director.age' //支持点号访问深层数据
+    'age' => '%director.age%' //Support dot access to deep data
 ]);
-//在define时传入
+//In the call "define"
 $container->define('director', Director::class, [
     'name' => '%directorName%',
-    'age' => 'director.age' //支持点号访问深层数据
+    'age' => '%director.age%'
 ]);
 $container->get('director');
 ```
