@@ -199,12 +199,12 @@ $container->setParameters([
 //在实例化时传入
 $container->get(Director::class, [
     'name' => '%directorName%',
-    'age' => 'director.age' //支持点号访问深层数据
+    'age' => '%director.age%' //支持点号访问深层数据
 ]);
 //在define时传入
 $container->define('director', Director::class, [
     'name' => '%directorName%',
-    'age' => 'director.age' //支持点号访问深层数据
+    'age' => '%director.age%' //支持点号访问深层数据
 ]);
 $container->get('director');
 ```
