@@ -1,6 +1,7 @@
 {
     "name": "slince/di",
     "description": "Slince dependency injection component",
+    "keywords": ["di", "ioc", "container", "dependency injection"],
     "license": "Apache-2.0",
     "authors": [
         {

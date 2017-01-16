@@ -22,7 +22,7 @@ use Slince\Di\Container;
 $container = new Container();
 ```
 
-为了更好的说明接下来的api我们假设有有一些类，Movie, Director, Actor, Actress, ActorInterface，代码如下：
+为了更好的说明api我们假设有有一些类，Movie, Director, Actor, Actress, ActorInterface，代码如下：
 
 ```
 interface ActorInterface
@@ -74,7 +74,7 @@ class Movie
 
 声明依赖注入的方式有下面四种
 
-1. 直接绑定一个类实例
+- 直接绑定一个类实例
 ```
 $director = new Director();
 $container->instance('director', $director);
@@ -82,10 +82,10 @@ var_dump($container->get('director') === $director); //true
 ```
 直接绑定实例的话容器会自动设置为单例模式。
 
-2. 设置一个自定义的实例化指令
+- 设置一个自定义的实例化指令
 ```
 $container->delegate('director', function(){
-    return new Director();;
+    return new Director();
 });
 var_dump($container->get('director') instanceof Director::class); //true
 ```
@@ -95,8 +95,9 @@ $container->delegate('director', [Director::class, 'factory']);
 var_dump($container->get('director') instanceof Director::class); //true
 ```
 
-3. 设置详细的实例化指令（构造器注入，setter注入，property注入）
-多数情况下类的依赖都是对象依赖，有些则需要提供一些非对象并且没有默认值的（即可选）依赖，这时需要告诉容器需要为
+- 设置详细的实例化指令（构造器注入，setter注入，property注入）
+
+多数情况下服务类的依赖都是对象，但有些则是非对象并且没有默认值的（即可选）依赖，这时需要告诉容器需要为
 该服务类的实例化工作提供哪些参数：
 
 ```
@@ -105,22 +106,29 @@ $container->define('director', Director::class, ['name'=>'James', 'age'=>26], []
 > 参数1:别名，参数2:别名实际指向的类，参数3:构造参数，参数4:setter注入，参数5:property注入
 
 提供参数有两种方式，一是通过变量名即例中所示。二种是通过位置索引即只需要给出位置索引与参数的键值对即可；如上例如果
-只需要设置导演的年纪则可以：
+只需要设置导演的年纪则可以这样写，这对需要跳过对象依赖只设置非对象依赖非常有用。
+
 ```
 $container->define('director', Director::class, [1=>26]); //参数age是第二个参数，即键值设置为1
 ```
-这对需要跳过对象依赖只设置非对象依赖非常有用。
 
-setter注入：需要额外告诉容器注入方法：
+如果当前服务类依赖一个已定义的服务可以使用Reference引用。
+```
+$container->define('movie', Movie::class, ['actor'=> new Reference('actor')]);
+```
+
+
+setter注入：需要额外告诉容器setter方法，如下例;因为Movie的构造器与`setActress`依赖的都是对象，故在此省略了实际参数。
 
 ```
 $container->define('movie', Movie::class, [], ['setActress' => []], []);
 ```
-因为Movie的构造器与`setActress`依赖的都是对象，故在此省略了实际参数。
+
 
 property注入：在参数5设置该类的属性名与参数值的键值对即可。
 
-4. 设置别名与可实例化类的指向关系
+
+- 设置别名与可实例化类的指向关系
 
 ```
 $container->bind('director', Director::class):
@@ -159,7 +167,9 @@ $container->set('director', function(){
 //define方法替换方式有所变化
 $container->set('director', new Define(Director::class));
 ```
+
 ### 设置单例
+
 ```
 $container->set('director', Director::class);
 $container->share('director');
