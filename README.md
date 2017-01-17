@@ -102,7 +102,7 @@ $container->delegate('director', [Director::class, 'factory']);
 var_dump($container->get('director') instanceof Director::class); //true
 ```
 
-- Set the detailed instantiation directives（Constructor injection，Setter injection,Property injection）
+- Set the detailed instantiation directives(Constructor injection，Setter injection,Property injection)
 
 In most cases, the dependencies of service classes are objects, but others are non-objects and have no default (ie, optional) dependencies. 
 In this case, you need to tell the container which parameters to provide for the instantiation of the service class:

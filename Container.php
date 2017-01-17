@@ -353,7 +353,7 @@ class Container
         }
         $constructor = $reflection->getConstructor();
         if (!is_null($constructor)) {
-            $constructorArgs = $this->resolveMethodArguments(
+            $constructorArgs = $this->resolveFunctionArguments(
                 $constructor,
                 $this->resolveParameters($arguments),
                 $this->getContextBindings($class, $constructor->getName())
@@ -382,7 +382,7 @@ class Container
             $contextBindings = $this->getContextBindings($reflection->getName(), $method);
             $reflectionMethod->invokeArgs(
                 $instance,
-                $this->resolveMethodArguments($reflectionMethod, $methodArguments, $contextBindings)
+                $this->resolveFunctionArguments($reflectionMethod, $methodArguments, $contextBindings)
             );
         }
         // 触发属性
@@ -401,15 +401,15 @@ class Container
 
     /**
      * 处理方法所需要的参数
-     * @param \ReflectionMethod $method
+     * @param \ReflectionFunctionAbstract $method
      * @param array $arguments
      * @param array $contextBindings 该方法定义的所有依赖绑定
      * @throws DependencyInjectionException
      * @return array
      */
-    protected function resolveMethodArguments(\ReflectionMethod $method, array $arguments, array $contextBindings = [])
+    protected function resolveFunctionArguments(\ReflectionFunctionAbstract $method, array $arguments, array $contextBindings = [])
     {
-        $constructorArgs = [];
+        $functionArguments = [];
         $arguments = $this->resolveParameters($arguments);
         $isNumeric = !empty($arguments) && is_numeric(key($arguments));
         foreach ($method->getParameters() as $parameter) {
@@ -417,22 +417,31 @@ class Container
             $index = $isNumeric ? $parameter->getPosition() : $parameter->getName();
             // 如果定义过依赖 则直接获取
             if (isset($arguments[$index])) {
-                $constructorArgs[] = $arguments[$index];
+                $functionArguments[] = $arguments[$index];
             } elseif (($dependency = $parameter->getClass()) != null) {
                 $dependencyName = $dependency->getName();
                 //如果该依赖已经重新映射到新的依赖上则修改依赖为新指向
                 isset($contextBindings[$dependencyName]) && $dependencyName = $contextBindings[$dependencyName];
-                $constructorArgs[] = $this->get($dependencyName);
+                try {
+                    $functionArguments[] = $this->get($dependencyName);
+                } catch (DependencyInjectionException $exception) {
+                    if ($parameter->isOptional()) {
+                        $functionArguments[] = $parameter->getDefaultValue();
+                    } else {
+                        throw $exception;
+                    }
+                }
             } elseif ($parameter->isOptional()) {
-                $constructorArgs[] = $parameter->getDefaultValue();
+                $functionArguments[] = $parameter->getDefaultValue();
             } else {
                 throw new DependencyInjectionException(sprintf(
-                    'Parameter "%s" must be provided',
-                    $parameter->getName()
+                    'Missing required parameter "%s" when calling "%s"',
+                    $parameter->getName(),
+                    $method->getName()
                 ));
             }
         }
-        return $constructorArgs;
+        return $functionArguments;
     }
 
     /**
