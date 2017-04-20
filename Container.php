@@ -162,13 +162,13 @@ class Container
         if (is_callable($definition)) {
             $this->delegate($name, $definition);
             $share && $this->share($name);
+        } elseif ($definition instanceof Definition) {
+            $this->setDefinition($name, $definition, $share);
         } elseif (is_object($definition)) {
             $this->instance($name, $definition); //如果$definition是实例的话则只能单例
         } elseif (is_string($definition)) {
             $this->bind($name, $definition);
             $share && $this->share($name);
-        } elseif ($definition instanceof Definition) {
-            $this->setDefinition($name, $definition, $share);
         } else {
             throw new ConfigException(sprintf("Unexpected object definition type '%s'", gettype($definition)));
         }

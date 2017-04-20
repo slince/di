@@ -7,7 +7,7 @@ class Director
 
     protected $age;
 
-    public function __construct($name = '', $age = 0)
+    public function __construct($name = '', $age = 18)
     {
         $this->name = $name;
         $this->age = $age;

@@ -4,6 +4,7 @@
 [![Coverage Status](https://img.shields.io/codecov/c/github/slince/di.svg?style=flat-square)](https://codecov.io/github/slince/di)
 [![Total Downloads](https://img.shields.io/packagist/dt/slince/di.svg?style=flat-square)](https://packagist.org/packages/slince/di)
 [![Latest Stable Version](https://img.shields.io/packagist/v/slince/di.svg?style=flat-square&label=stable)](https://packagist.org/packages/slince/di)
+[![Scrutinizer](https://img.shields.io/scrutinizer/g/slince/di.svg?style=flat-square)](https://scrutinizer-ci.com/g/slince/smartqq/?branch=master)
 
 This package is a flexible IOC container for PHP with a focus on being lightweight and fast as well as requiring as little configuration as possible.[Simplified Chinese](./README-zh_CN.md)
 

@@ -4,6 +4,7 @@
 [![Coverage Status](https://img.shields.io/codecov/c/github/slince/di.svg?style=flat-square)](https://codecov.io/github/slince/di)
 [![Total Downloads](https://img.shields.io/packagist/dt/slince/di.svg?style=flat-square)](https://packagist.org/packages/slince/di)
 [![Latest Stable Version](https://img.shields.io/packagist/v/slince/di.svg?style=flat-square&label=stable)](https://packagist.org/packages/slince/di)
+[![Scrutinizer](https://img.shields.io/scrutinizer/g/slince/di.svg?style=flat-square)](https://scrutinizer-ci.com/g/slince/smartqq/?branch=master)
 
 依赖注入组件是一个灵活的IOC容器，通过一些配置即可实现类的实例化工作。[英文文档](./README.md)
 
