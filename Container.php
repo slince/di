@@ -52,7 +52,7 @@ class Container
     public function define($name, $class, array $arguments, array $methodCalls = [], array $properties = [])
     {
         $definition = new Definition($class, $arguments, $methodCalls, $properties);
-        $this->setDefinition($name, $definition);
+        $this->bindDefinition($name, $definition);
         return $definition;
     }
 
@@ -163,7 +163,7 @@ class Container
             $this->delegate($name, $definition);
             $share && $this->share($name);
         } elseif ($definition instanceof Definition) {
-            $this->setDefinition($name, $definition, $share);
+            $this->bindDefinition($name, $definition, $share);
         } elseif (is_object($definition)) {
             $this->instance($name, $definition); //如果$definition是实例的话则只能单例
         } elseif (is_string($definition)) {
@@ -181,9 +181,21 @@ class Container
      * @param Definition $definition
      * @param boolean $share
      * @return Definition
-     * @deprecated Will be protected, Use define & share or set instead.
+     * @deprecated The method will be protected, Use define & share or set instead.
      */
     public function setDefinition($name, Definition $definition, $share = false)
+    {
+        return $this->bindDefinition($name, $definition, $share);
+    }
+
+    /**
+     * sets a definition
+     * @param string $name
+     * @param Definition $definition
+     * @param boolean $share
+     * @return Definition
+     */
+    protected function bindDefinition($name, Definition $definition, $share = false)
     {
         $this->definitions[$name] = $definition;
         $share && $this->share($name);
@@ -379,7 +391,7 @@ class Container
                 ));
             }
             //获取该方法下所有可用的绑定
-            $contextBindings = $this->getContextBindings($reflection->getName(), $method);
+            $contextBindings = $this->getContextBindings($reflection->name, $method);
             $reflectionMethod->invokeArgs(
                 $instance,
                 $this->resolveFunctionArguments($reflectionMethod, $methodArguments, $contextBindings)
@@ -414,12 +426,12 @@ class Container
         $isNumeric = !empty($arguments) && is_numeric(key($arguments));
         foreach ($method->getParameters() as $parameter) {
             //如果提供的是数字索引按照参数位置处理否则按照参数名
-            $index = $isNumeric ? $parameter->getPosition() : $parameter->getName();
+            $index = $isNumeric ? $parameter->getPosition() : $parameter->name;
             // 如果定义过依赖 则直接获取
             if (isset($arguments[$index])) {
                 $functionArguments[] = $arguments[$index];
             } elseif (($dependency = $parameter->getClass()) != null) {
-                $dependencyName = $dependency->getName();
+                $dependencyName = $dependency->name;
                 //如果该依赖已经重新映射到新的依赖上则修改依赖为新指向
                 isset($contextBindings[$dependencyName]) && $dependencyName = $contextBindings[$dependencyName];
                 try {
@@ -436,7 +448,7 @@ class Container
             } else {
                 throw new DependencyInjectionException(sprintf(
                     'Missing required parameter "%s" when calling "%s"',
-                    $parameter->getName(),
+                    $parameter->name,
                     $method->getName()
                 ));
             }
