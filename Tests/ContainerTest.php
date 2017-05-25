@@ -137,6 +137,11 @@ class ContainerTest extends TestCase
 
         $container->bind(ActorInterface::class, Actor::class);
         $this->assertTrue($container->has(ActorInterface::class));
+
+        $container = new Container();
+        $container->instance(new Director());
+        $this->assertTrue($container->has(Director::class));
+
     }
 
     public function testShare()

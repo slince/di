@@ -139,7 +139,7 @@ class Container implements ContainerInterface
         $this->shares[$name] = null;
         return $this;
     }
-    
+
     /**
      * Add a definition to the container
      * ```
