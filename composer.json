@@ -1,8 +1,8 @@
 {
     "name": "slince/di",
-    "description": "Slince dependency injection component",
+    "description": "A flexible dependency injection container",
     "keywords": ["di", "ioc", "container", "dependency injection"],
-    "license": "Apache-2.0",
+    "license": "MIT",
     "authors": [
         {
             "name": "Tao",
@@ -15,7 +15,7 @@
         "dflydev/dot-access-data": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "~4.2"
+        "phpunit/phpunit": "~4.0"
     },
     "autoload": {
         "psr-4": {
