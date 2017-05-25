@@ -7,22 +7,16 @@ use Slince\Di\Tests\TestClass\Director;
 
 class ClassDefinitionTest extends TestCase
 {
-
-    protected function createDefinition($class, $arguments = [], $methodCalls = [])
-    {
-        return new ClassDefinition($class, $arguments, $methodCalls);
-    }
-    
     public function testSetAndGetArgument()
     {
-        $definition = $this->createDefinition(Director::class);
+        $definition = new ClassDefinition(Director::class);
         $definition->setArgument(0, 'LiAn');
         $this->assertEquals('LiAn', $definition->getArgument(0));
     }
 
     public function testSetAndGetArguments()
     {
-        $definition = $this->createDefinition(Director::class);
+        $definition = new ClassDefinition(Director::class);
         $arguments = ['Jumi', 12];
         $definition->setArguments($arguments);
         $this->assertEquals($arguments, $definition->getArguments());
@@ -30,19 +24,31 @@ class ClassDefinitionTest extends TestCase
 
     public function testSetAndGetMethodCall()
     {
-        $definition = $this->createDefinition(Director::class);
+        $definition = new ClassDefinition(Director::class);
         $definition->setMethodCall('setName', ['LiAn']);
         $this->assertEquals(['LiAn'], $definition->getMethodCall('setName'));
     }
 
     public function testSetAndGetMethodCalls()
     {
-        $definition = $this->createDefinition(Director::class);
+        $definition = new ClassDefinition(Director::class);
         $methodCalls = [
             'setName' => ['LiAn'],
             'setAge' => [18],
         ];
         $definition->setMethodCalls($methodCalls);
         $this->assertEquals($methodCalls, $definition->getMethodCalls());
+    }
+
+    public function testProperty()
+    {
+        $definition = new ClassDefinition(Director::class);
+        $this->assertEmpty($definition->getProperties());
+        $definition->setProperties([
+            'foo' => 'bar'
+        ]);
+        $this->assertEquals(['foo'=>'bar'], $definition->getProperties());
+        $definition->setProperty('bar', 'baz');
+        $this->assertEquals('baz', $definition->getProperty('bar'));
     }
 }

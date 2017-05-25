@@ -118,8 +118,6 @@ class Container implements ContainerInterface
         } else {
             if (is_array($context)) {
                 list($contextClass, $contextMethod) = $context;
-            } elseif (strpos($context, '::') !== false) {
-                list($contextClass, $contextMethod) = explode('::', $context);
             } else {
                 $contextClass = $context;
                 $contextMethod = 'general';
@@ -131,6 +129,17 @@ class Container implements ContainerInterface
         return $this;
     }
 
+    /**
+     * Share the service by given name
+     * @param string $name
+     * @return $this
+     */
+    public function share($name)
+    {
+        $this->shares[$name] = null;
+        return $this;
+    }
+    
     /**
      * Add a definition to the container
      * ```
@@ -173,17 +182,6 @@ class Container implements ContainerInterface
         } else {
             throw new ConfigException(sprintf("Unexpected object definition type '%s'", gettype($definition)));
         }
-        return $this;
-    }
-
-    /**
-     * Share the service by given name
-     * @param string $name
-     * @return $this
-     */
-    public function share($name)
-    {
-        $this->shares[$name] = null;
         return $this;
     }
 

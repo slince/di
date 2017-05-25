@@ -18,10 +18,7 @@ error_reporting(E_ALL ^ E_USER_DEPRECATED);
 
 class ContainerTest extends TestCase
 {
-    /**
-     * 自定义闭包或者工厂方法代理
-     */
-    public function testDelegate()
+    public function testCall()
     {
         $container = new Container();
         $container->call('director1', function () {
@@ -34,9 +31,6 @@ class ContainerTest extends TestCase
         $container->call('director', 'not-exists-function');
     }
 
-    /**
-     * 测试对象绑定，对象绑定结果是单例
-     */
     public function testInstance()
     {
         $container = new Container();
@@ -44,8 +38,10 @@ class ContainerTest extends TestCase
         $container->instance('director', $director);
         $this->assertInstanceOf(Director::class, $container->get('director'));
         $this->assertTrue($container->get('director') === $director);
-        //instance只能是单例
         $this->assertTrue($container->get('director') === $container->get('director'));
+
+        $container->instance(new Director());
+        $this->assertTrue($container->has(Director::class));
 
         $this->expectException(ConfigException::class);
         $container->instance('not-an-object');
@@ -62,30 +58,20 @@ class ContainerTest extends TestCase
         $this->assertEquals(45, $director->getAge());
     }
 
-    /**
-     * 类名<=>别名，interface <=> implement绑定
-     */
     public function testSimpleBind()
     {
         $container = new Container();
-        //简单的别名绑定
         $container->bind('director', Director::class);
         $this->assertInstanceOf(Director::class, $container->get('director'));
     }
 
-    /**
-     * 绑定接口与实现
-     */
     public function testInterfaceBind()
     {
         $container = new Container();
-        //接口与实现；类绑定
         $container->bind(ActorInterface::class, Actor::class);
-        //直接获取接口实例
         $this->assertInstanceOf(ActorInterface::class, $container->get(ActorInterface::class));
         $this->assertInstanceOf(Actor::class, $container->get(ActorInterface::class));
 
-        //获取依赖该接口的类实例
         $movie = $container->get(Movie::class);
         $this->assertInstanceOf(Movie::class, $movie);
         $this->assertInstanceOf(Actor::class, $movie->getActor());
@@ -124,6 +110,33 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(Movie::class, $movie);
         $this->assertInstanceOf(Actor::class, $movie->getActor());
         $this->assertInstanceOf(Actress::class, $movie->getActress());
+    }
+
+    public function testGetContextBindings()
+    {
+        $container = new Container();
+        $container->bind(ActorInterface::class, Actor::class, Movie::class); //构造函数
+        $this->assertEquals([ActorInterface::class => Actor::class], $container->getContextBindings(Movie::class, '__construct'));
+        $this->assertEquals([ActorInterface::class => Actor::class], $container->getContextBindings(Movie::class, 'no_exists_method'));
+
+
+        $container = new Container();
+        $container->bind(ActorInterface::class, Actor::class, [Movie::class,  'setActress']); //构造函数
+        $this->assertEquals([], $container->getContextBindings(Movie::class, '__construct'));
+        $this->assertEquals([ActorInterface::class => Actor::class], $container->getContextBindings(Movie::class, 'setActress'));
+    }
+
+    public function testHas()
+    {
+        $container = new Container();
+        $this->assertFalse($container->has('not_exists_class'));
+        $this->assertTrue($container->has(Director::class));
+
+        $container->instance(new Director());
+        $this->assertTrue($container->has(Director::class));
+
+        $container->bind(ActorInterface::class, Actor::class);
+        $this->assertTrue($container->has(ActorInterface::class));
     }
 
     public function testShare()
@@ -249,11 +262,10 @@ class ContainerTest extends TestCase
         $container = new Container();
         $container->setParameters([
             'directorName' => 'James',
-            'director' => [ //支持点号获取深度数据结构
+            'director' => [
                 'age' => 26
             ]
         ]);
-        //支持点号访问
         $container->define('director', Director::class)->setArguments([
             '%directorName%',
             '%director.age%'
@@ -261,7 +273,6 @@ class ContainerTest extends TestCase
         $this->assertEquals('James', $container->get('director')->getName());
         $this->assertEquals(26, $container->get('director')->getAge());
 
-        //在get操作时传入参数
         $this->assertEquals(26, $container->get(Director::class, [
             'age' => '%director.age%'
         ])->getAge());
