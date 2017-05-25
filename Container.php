@@ -32,12 +32,12 @@ class Container
      * 参数集合
      * @var ParameterStore
      */
-    protected $parameterStore;
+    protected $parameters;
 
     public function __construct()
     {
         //全局参数存储
-        $this->parameterStore = new ParameterStore();
+        $this->parameters = new ParameterStore();
     }
 
     /**
@@ -80,14 +80,14 @@ class Container
      * $container->instance($user);
      *
      * ```
-     * @param $name
-     * @param $instance
+     * @param string $name
+     * @param object $instance
      * @throws ConfigException
      * @return $this
      */
-    public function instance($name, $instance)
+    public function instance($name, $instance = null)
     {
-        if (func_get_args() == 1) {
+        if (func_num_args() == 1) {
             if (!is_object($name)) {
                 throw new ConfigException(sprintf("Instance expects a valid object"));
             }
@@ -293,7 +293,7 @@ class Container
      */
     public function getParameters()
     {
-        return $this->parameterStore->toArray();
+        return $this->parameters->toArray();
     }
 
     /**
@@ -302,7 +302,7 @@ class Container
      */
     public function setParameters(array $parameterStore)
     {
-        $this->parameterStore->setParameters($parameterStore);
+        $this->parameters->setParameters($parameterStore);
     }
 
     /**
@@ -311,7 +311,7 @@ class Container
      */
     public function addParameters(array $parameters)
     {
-        $this->parameterStore->addParameters($parameters);
+        $this->parameters->addParameters($parameters);
     }
 
     /**
@@ -321,7 +321,7 @@ class Container
      */
     public function setParameter($name, $value)
     {
-        $this->parameterStore->setParameter($name, $value);
+        $this->parameters->setParameter($name, $value);
     }
 
     /**
@@ -332,7 +332,7 @@ class Container
      */
     public function getParameter($name, $default = null)
     {
-        return $this->parameterStore->getParameter($name, $default);
+        return $this->parameters->getParameter($name, $default);
     }
 
     /**
@@ -512,7 +512,7 @@ class Container
         //%xx%类型的直接返回对应的参数
         if (preg_match("#^%([^%\s]+)%$#", $value, $match)) {
             $key = $match[1];
-            if ($parameter = $this->parameterStore->getParameter($key)) {
+            if ($parameter = $this->parameters->getParameter($key)) {
                 return $parameter;
             }
             throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
@@ -520,7 +520,7 @@ class Container
         //"fool%bar%baz"
         return preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
             $key = $matches[1];
-            if ($parameter = $this->parameterStore->getParameter($key)) {
+            if ($parameter = $this->parameters->getParameter($key)) {
                 return $parameter;
             }
             throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));

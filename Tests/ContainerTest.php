@@ -3,6 +3,7 @@ namespace Slince\Di\Tests;
 
 use Slince\Di\Container;
 use Slince\Di\Definition;
+use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\DependencyInjectionException;
 use Slince\Di\Reference;
 use Slince\Di\Tests\TestClass\Actor;
@@ -32,6 +33,8 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf(Director::class, $container->get('director1'));
         $container->delegate('director2', [Director::class, 'factory']); //或者 'Slince\Di\Tests\TestClass\Director::factory'
         $this->assertInstanceOf(Director::class, $container->get('director2'));
+        $this->expectException(ConfigException::class);
+        $container->delegate('director', 'not-exists-function');
     }
 
     /**
@@ -46,6 +49,10 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($container->get('director') === $director);
         //instance只能是单例
         $this->assertTrue($container->get('director') === $container->get('director'));
+
+        $this->expectException(ConfigException::class);
+        $container->instance('not-an-object');
+
     }
 
     public function testDefine()
@@ -57,9 +64,6 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(45, $director->getAge());
     }
 
-    /**
-     * @deprecated
-     */
     public function testSetDefinition()
     {
         $container = $this->getContainer();
@@ -83,9 +87,6 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf(Director::class, $container->get('director'));
     }
 
-    /**
-     * {@deprecated}
-     */
     public function alias()
     {
         $container = $this->getContainer();
@@ -131,7 +132,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf(Actor::class, $movie->getActress());
 
         //直接获取接口实例,会报出异常
-        $this->setExpectedException(DependencyInjectionException::class);
+        $this->expectException(DependencyInjectionException::class);
         $this->assertInstanceOf(Actor::class, $container->get(ActorInterface::class));
     }
 
@@ -199,6 +200,9 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         ]));
         $this->assertInstanceOf(Director::class, $container->get('director4'));
         $this->assertFalse($container->get('director4') === $container->get('director4'));
+
+        $this->expectException(ConfigException::class);
+        $container->set('service', ['hello' => 'world']);
     }
 
     public function testSetWithShare()
@@ -230,6 +234,18 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($container->get('director4') === $container->get('director4'));
     }
 
+    public function testGetWithForceNew()
+    {
+        $container = $this->getContainer();
+        //Similar to delegate
+        $container->set('director', function () {
+            return new Director('James', 26);
+        }, true);
+
+        $this->assertTrue($container->get('director')  === $container->get('director'));
+        $this->assertFalse($container->get('director')  === $container->get('director', true));
+    }
+
     public function testGetWithArguments()
     {
         $container = $this->getContainer();
@@ -259,6 +275,22 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         ]);
         $this->assertEquals('Bob', $movie->getDirector()->getName());
         $this->assertEquals(45, $movie->getDirector()->getAge());
+    }
+
+    public function testParameters()
+    {
+        $container = $this->getContainer();
+        $container->setParameters([
+            'foo' => 'bar'
+        ]);
+        $this->assertEquals('bar', $container->getParameter('foo'));
+        $container->addParameters([
+            'foo' => 'baz',
+            'bar' => 'baz'
+        ]);
+        $this->assertEquals(['foo' => 'baz', 'bar' => 'baz'], $container->getParameters());
+        $container->setParameter('bar', 'baz');
+        $this->assertEquals('baz', $container->getParameter('bar'));
     }
 
     public function testSimpleGlobalParameter()
