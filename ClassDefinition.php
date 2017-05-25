@@ -5,28 +5,28 @@
  */
 namespace Slince\Di;
 
-class Definition
+class ClassDefinition
 {
     /**
-     * 类名
+     * Class
      * @var string
      */
     protected $class;
 
     /**
-     * 构造参数
+     * Array of arguments
      * @var array
      */
     protected $arguments = [];
 
     /**
-     * setter方法
+     * Array of setters
      * @var array
      */
     protected $calls = [];
 
     /**
-     * 属性赋值
+     * Array of properties
      * @var array
      */
     protected $properties = [];
@@ -40,8 +40,8 @@ class Definition
     }
 
     /**
-     * 设置一个构造参数
-     * @param int|string $indexOrName 参数名或者参数索引
+     * Sets a argument
+     * @param int|string $indexOrName
      * @param mixed $argument
      * @return $this
      */
@@ -53,7 +53,7 @@ class Definition
 
 
     /**
-     * 批量设置构造参数
+     * Sets array of arguments
      * @param array $arguments
      * @return $this
      */
@@ -64,7 +64,7 @@ class Definition
     }
 
     /**
-     * 获取所有的构造参数
+     * Gets all arguments of constructor
      * @return array
      */
     public function getArguments()
@@ -73,7 +73,7 @@ class Definition
     }
 
     /**
-     * 获取指定次序上的参数
+     * Gets the argument at the specified position of constructor
      * @param int|string $indexOrName
      * @return mixed
      */
@@ -83,9 +83,9 @@ class Definition
     }
 
     /**
-     * 设置一个setter方法
+     * Adds a setter
      * @param string $method
-     * @param array $arguments 方法所需要的参数，只需要给出标量依赖即可
+     * @param array $arguments
      * @return $this
      */
     public function setMethodCall($method, array $arguments)
@@ -95,7 +95,7 @@ class Definition
     }
 
     /**
-     * 批量设置setter方法
+     * Sets array of setter
      * @param array $calls
      * @return $this
      */
@@ -106,7 +106,7 @@ class Definition
     }
 
     /**
-     * 获取setter方法
+     * Gets all setter
      * @return array
      */
     public function getMethodCalls()
@@ -115,7 +115,7 @@ class Definition
     }
 
     /**
-     * 获取指定函数名下的方法
+     * Gets the parameters of one setter
      * @param string $method
      * @return array|null
      */
@@ -125,7 +125,7 @@ class Definition
     }
 
     /**
-     * 获取所有的预定义属性值对
+     * Gets all properties
      * @return array
      */
     public function getProperties()
@@ -134,7 +134,7 @@ class Definition
     }
 
     /**
-     * 获取当前类名
+     * Gets the class
      * @return string
      */
     public function getClass()
