@@ -42,12 +42,12 @@ class ClassDefinition
     /**
      * Sets a argument
      * @param int|string $indexOrName
-     * @param mixed $argument
+     * @param mixed $value
      * @return $this
      */
-    public function setArgument($indexOrName, $argument)
+    public function setArgument($indexOrName, $value)
     {
-        $this->arguments[$indexOrName] = $argument;
+        $this->arguments[$indexOrName] = $value;
         return $this;
     }
 
@@ -85,12 +85,12 @@ class ClassDefinition
     /**
      * Adds a setter
      * @param string $method
-     * @param array $arguments
+     * @param string|array $arguments
      * @return $this
      */
-    public function setMethodCall($method, array $arguments)
+    public function setMethodCall($method, $arguments)
     {
-        $this->calls[$method] = $arguments;
+        $this->calls[$method] = (array)$arguments;
         return $this;
     }
 
@@ -125,6 +125,14 @@ class ClassDefinition
     }
 
     /**
+     * @param array $properties
+     */
+    public function setProperties($properties)
+    {
+        $this->properties = $properties;
+    }
+
+    /**
      * Gets all properties
      * @return array
      */
@@ -134,16 +142,34 @@ class ClassDefinition
     }
 
     /**
+     * Adds a property
+     * @param int|string $name
+     * @param mixed $value
+     * @return $this
+     */
+    public function setProperty($name, $value)
+    {
+        $this->properties[$name] = $value;
+        return $this;
+    }
+
+    /**
+     * Gets the property by given name
+     * @param string $name
+     * @return mixed
+     */
+    public function getProperty($name)
+    {
+        return isset($this->properties[$name]) ? $this->properties[$name] : null;
+    }
+
+
+    /**
      * Gets the class
      * @return string
      */
     public function getClass()
     {
         return $this->class;
-    }
-
-    public static function build(ClassDefinition $definition, array $arguments)
-    {
-
     }
 }

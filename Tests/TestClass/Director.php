@@ -7,6 +7,8 @@ class Director
 
     protected $age;
 
+    public $gender;
+
     public function __construct($name = '', $age = 18)
     {
         $this->name = $name;

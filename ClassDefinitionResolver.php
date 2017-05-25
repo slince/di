@@ -17,7 +17,7 @@ class ClassDefinitionResolver
     /**
      * @param Container $container
      */
-    public function __construct($container)
+    public function __construct(Container $container)
     {
         $this->container = $container;
     }
