@@ -141,4 +141,9 @@ class ClassDefinition
     {
         return $this->class;
     }
+
+    public static function build(ClassDefinition $definition, array $arguments)
+    {
+
+    }
 }

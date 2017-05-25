@@ -5,6 +5,8 @@
  */
 namespace Slince\Di\Exception;
 
-class DependencyInjectionException extends \Exception
+use Psr\Container\ContainerExceptionInterface;
+
+class DependencyInjectionException extends \InvalidArgumentException implements ContainerExceptionInterface
 {
 }
