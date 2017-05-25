@@ -36,7 +36,7 @@ class ClassDefinitionResolver
             throw new DependencyInjectionException(sprintf('Class "%s" is invalid', $definition->getClass()));
         }
         if (!$reflection->isInstantiable()) {
-            throw new DependencyInjectionException(sprintf("Can not instantiate [%s]", $definition->getClass()));
+            throw new DependencyInjectionException(sprintf('Can not instantiate "%s"', $definition->getClass()));
         }
         $constructor = $reflection->getConstructor();
         if (is_null($constructor)) {
@@ -59,7 +59,7 @@ class ClassDefinitionResolver
                 $reflectionMethod = $reflection->getMethod($method);
             } catch (\ReflectionException $e) {
                 throw new DependencyInjectionException(sprintf(
-                    "Class '%s' has no method '%s'",
+                    'Class "%s" has no method "%s"',
                     $definition->getClass(),
                     $method
                 ));
