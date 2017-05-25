@@ -1,9 +1,10 @@
 <?php
 namespace Slince\Di\Tests;
 
+use PHPUnit\Framework\TestCase;
 use Slince\Di\Reference;
 
-class ReferenceTest extends \PHPUnit_Framework_TestCase
+class ReferenceTest extends TestCase
 {
     public function testConstructor()
     {

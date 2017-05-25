@@ -1,10 +1,11 @@
 <?php
 namespace Slince\Di\Tests;
 
+use PHPUnit\Framework\TestCase;
 use Slince\Di\Definition;
 use Slince\Di\Tests\TestClass\Director;
 
-class DefinitionTest extends \PHPUnit_Framework_TestCase
+class DefinitionTest extends TestCase
 {
 
     protected function createDefinition($class, $arguments = [], $methodCalls = [])

@@ -1,6 +1,7 @@
 <?php
 namespace Slince\Di\Tests;
 
+use PHPUnit\Framework\TestCase;
 use Slince\Di\Container;
 use Slince\Di\Definition;
 use Slince\Di\Exception\ConfigException;
@@ -14,7 +15,7 @@ use Slince\Di\Tests\TestClass\Movie;
 
 error_reporting(E_ALL ^ E_USER_DEPRECATED);
 
-class ContainerTest extends \PHPUnit_Framework_TestCase
+class ContainerTest extends TestCase
 {
     public function getContainer()
     {
