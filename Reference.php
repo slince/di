@@ -8,7 +8,7 @@ namespace Slince\Di;
 class Reference
 {
     /**
-     * 服务名
+     * Service name
      * @var string
      */
     protected $name;
@@ -19,7 +19,7 @@ class Reference
     }
 
     /**
-     * 获取服务名
+     * Get service name
      * @return string
      */
     public function getName()
@@ -28,7 +28,7 @@ class Reference
     }
 
     /**
-     * 设置服务名
+     * Set service name
      * @param string $name
      */
     public function setName($name)

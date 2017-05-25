@@ -2,15 +2,15 @@
 namespace Slince\Di\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Slince\Di\Definition;
+use Slince\Di\ClassDefinition;
 use Slince\Di\Tests\TestClass\Director;
 
-class DefinitionTest extends TestCase
+class ClassDefinitionTest extends TestCase
 {
 
     protected function createDefinition($class, $arguments = [], $methodCalls = [])
     {
-        return new Definition($class, $arguments, $methodCalls);
+        return new ClassDefinition($class, $arguments, $methodCalls);
     }
     
     public function testSetAndGetArgument()

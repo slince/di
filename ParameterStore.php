@@ -10,7 +10,7 @@ use Dflydev\DotAccessData\Data;
 class ParameterStore extends Data
 {
     /**
-     * 批量设置参数
+     * Sets array of parameters
      * @param $parameters
      */
     public function setParameters($parameters)
@@ -19,7 +19,7 @@ class ParameterStore extends Data
     }
 
     /**
-     * 添加预定义参数
+     * Adds array of parameters
      * @param array $parameters
      */
     public function addParameters(array $parameters)
@@ -28,8 +28,8 @@ class ParameterStore extends Data
     }
 
     /**
-     * 设置参数
-     * @param $name
+     * Sets parameter with given name and value
+     * @param int|string $name
      * @param mixed $value
      */
     public function setParameter($name, $value)
@@ -38,10 +38,10 @@ class ParameterStore extends Data
     }
 
     /**
-     * 获取参数
+     * Gets the parameter by its name
      * @param $name
-     * @param null $default
-     * @return mixed|null
+     * @param mixed $default
+     * @return mixed
      */
     public function getParameter($name, $default = null)
     {
@@ -52,7 +52,7 @@ class ParameterStore extends Data
     }
 
     /**
-     * 获取全部参数
+     * Gets all parameters
      * @return array
      */
     public function toArray()

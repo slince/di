@@ -118,10 +118,12 @@ class Container implements ContainerInterface
         } else {
             if (is_array($context)) {
                 list($contextClass, $contextMethod) = $context;
-            } else {
+            } elseif (strpos($context, '::') !== false) {
                 list($contextClass, $contextMethod) = explode('::', $context);
+            } else {
+                $contextClass = $context;
+                $contextMethod = 'general';
             }
-            $contextMethod || $contextMethod = 'general';
             isset($this->contextBindings[$contextClass][$contextMethod])
                 || ($this->contextBindings[$contextClass][$contextMethod] = []);
             $this->contextBindings[$contextClass][$contextMethod][$name] = $implementation;
@@ -164,12 +166,10 @@ class Container implements ContainerInterface
     {
         if (is_callable($definition)) {
             $this->call($name, $definition);
-        } elseif ($definition instanceof ClassDefinition) {
-            $this->definitions[$name] = $definition;
         } elseif (is_object($definition)) {
             $this->instance($name, $definition);
         } elseif (is_string($definition)) {
-            $this->bind($name, $definition);
+            $this->define($name, $definition);
         } else {
             throw new ConfigException(sprintf("Unexpected object definition type '%s'", gettype($definition)));
         }
@@ -350,10 +350,15 @@ class Container implements ContainerInterface
     protected function createInstanceFromDefinition($definition, array $arguments)
     {
         if (is_callable($definition)) {
-            $instance = call_user_func($definition, $this, $this->resolveFunctionArguments(
-                new \ReflectionFunction($definition),
-                $arguments
-            ));
+            if ($arguments && ($definition instanceof \Closure || is_string($definition))) {
+                $arguments['container'] = $this;
+                $arguments = $this->resolveFunctionArguments(
+                    new \ReflectionFunction($definition),
+                    $arguments
+                );
+            }
+            $arguments = $arguments ?: [$this];
+            $instance = call_user_func_array($definition, $arguments);
         } elseif ($definition instanceof ClassDefinition) {
             $instance = $this->getClassDefinitionResolver()->resolve($definition, $arguments);
         } elseif (is_object($definition)) {

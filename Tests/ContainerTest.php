@@ -6,6 +6,7 @@ use Slince\Di\Container;
 use Slince\Di\Definition;
 use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\DependencyInjectionException;
+use Slince\Di\Exception\NotFoundException;
 use Slince\Di\Reference;
 use Slince\Di\Tests\TestClass\Actor;
 use Slince\Di\Tests\TestClass\ActorInterface;
@@ -17,25 +18,20 @@ error_reporting(E_ALL ^ E_USER_DEPRECATED);
 
 class ContainerTest extends TestCase
 {
-    public function getContainer()
-    {
-        return new Container();
-    }
-
     /**
      * 自定义闭包或者工厂方法代理
      */
     public function testDelegate()
     {
-        $container = $this->getContainer();
-        $container->delegate('director1', function () {
+        $container = new Container();
+        $container->call('director1', function () {
             return new Director('James', 26);
         });
         $this->assertInstanceOf(Director::class, $container->get('director1'));
-        $container->delegate('director2', [Director::class, 'factory']); //或者 'Slince\Di\Tests\TestClass\Director::factory'
+        $container->call('director2', [Director::class, 'factory']); //或者 'Slince\Di\Tests\TestClass\Director::factory'
         $this->assertInstanceOf(Director::class, $container->get('director2'));
         $this->expectException(ConfigException::class);
-        $container->delegate('director', 'not-exists-function');
+        $container->call('director', 'not-exists-function');
     }
 
     /**
@@ -43,7 +39,7 @@ class ContainerTest extends TestCase
      */
     public function testInstance()
     {
-        $container = $this->getContainer();
+        $container = new Container();
         $director = new Director();
         $container->instance('director', $director);
         $this->assertInstanceOf(Director::class, $container->get('director'));
@@ -58,20 +54,9 @@ class ContainerTest extends TestCase
 
     public function testDefine()
     {
-        $container = $this->getContainer();
-        $container->define('director', Director::class, [0 => 'Bob', 1 => 45]);
-        $this->assertInstanceOf(Director::class, $director = $container->get('director'));
-        $this->assertEquals('Bob', $director->getName());
-        $this->assertEquals(45, $director->getAge());
-    }
-
-    public function testSetDefinition()
-    {
-        $container = $this->getContainer();
-        $container->setDefinition('director', new Definition(Director::class, [
-            'name' => 'Bob',
-            'age' => 45
-        ]));
+        $container = new Container();
+        $container->define('director', Director::class)
+            ->setArguments( [0 => 'Bob', 1 => 45]);
         $this->assertInstanceOf(Director::class, $director = $container->get('director'));
         $this->assertEquals('Bob', $director->getName());
         $this->assertEquals(45, $director->getAge());
@@ -82,17 +67,9 @@ class ContainerTest extends TestCase
      */
     public function testSimpleBind()
     {
-        $container = $this->getContainer();
+        $container = new Container();
         //简单的别名绑定
         $container->bind('director', Director::class);
-        $this->assertInstanceOf(Director::class, $container->get('director'));
-    }
-
-    public function alias()
-    {
-        $container = $this->getContainer();
-        //兼容旧版本别名绑定
-        $container->alias('director', Director::class);
         $this->assertInstanceOf(Director::class, $container->get('director'));
     }
 
@@ -101,7 +78,7 @@ class ContainerTest extends TestCase
      */
     public function testInterfaceBind()
     {
-        $container = $this->getContainer();
+        $container = new Container();
         //接口与实现；类绑定
         $container->bind(ActorInterface::class, Actor::class);
         //直接获取接口实例
@@ -114,16 +91,12 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(Actor::class, $movie->getActor());
     }
 
-    /**
-     * 为类设置接口依赖
-     */
     public function testInterfaceBindForClassContext()
     {
-        $container = $this->getContainer();
-        //为Movie类声明接口实际指向
+        $container = new Container();
+
         $container->bind(ActorInterface::class, Actor::class, Movie::class);
-        //获取依赖该接口的类实例，由于构造方法与setter皆是类依赖故container可以自动解决
-        $container->define('movie', Movie::class, [], [
+        $container->define('movie', Movie::class)->setMethodCalls([
             'setActress' => []
         ]);
 
@@ -132,25 +105,21 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(Actor::class, $movie->getActor());
         $this->assertInstanceOf(Actor::class, $movie->getActress());
 
-        //直接获取接口实例,会报出异常
-        $this->expectException(DependencyInjectionException::class);
+        $this->expectException(NotFoundException::class);
         $this->assertInstanceOf(Actor::class, $container->get(ActorInterface::class));
     }
 
-    /**
-     * 为类方法设置接口依赖
-     */
     public function testInterfaceBindForClassMethodContext()
     {
-        $container = $this->getContainer();
-        //为Movie类声明接口依赖
+        $container = new Container();
+
         $container->bind(ActorInterface::class, Actor::class, [Movie::class, '__construct']); //构造函数
         $container->bind(ActorInterface::class, Actress::class, [Movie::class, 'setActress']); //setter方法
 
-        //获取依赖该接口的类实例，由于构造方法与setter皆是类依赖故container可以自动解决
-        $container->define('movie', Movie::class, [], [
+        $container->define('movie', Movie::class)->setMethodCalls([
             'setActress' => []
         ]);
+
         $movie = $container->get('movie');
         $this->assertInstanceOf(Movie::class, $movie);
         $this->assertInstanceOf(Actor::class, $movie->getActor());
@@ -159,32 +128,26 @@ class ContainerTest extends TestCase
 
     public function testShare()
     {
-        $container = $this->getContainer();
-        $container->delegate('director', function () {
+        $container = new Container();
+        $container->call('director', function () {
             return new Director('James', 26);
         });
         $container->share('director');
         $this->assertInstanceOf(Director::class, $container->get('director'));
         $this->assertTrue($container->get('director') === $container->get('director'));
-
-        //兼容旧的api,已提示废除
-        $container->share('director2', function () {
-            return new Director('James', 26);
-        });
-        $this->assertTrue($container->get('director2') === $container->get('director2'));
     }
 
     public function testSet()
     {
-        $container = $this->getContainer();
-        //Similar to delegate
+        $container = new Container();
+        //Similar to call
         $container->set('director', function () {
             return new Director('James', 26);
         });
         $this->assertInstanceOf(Director::class, $container->get('director'));
         $this->assertFalse($container->get('director') === $container->get('director'));
 
-        //Similar to bind
+        //Similar to define
         $container->set('director2', Director::class);
         $this->assertInstanceOf(Director::class, $container->get('director2'));
         $this->assertFalse($container->get('director2') === $container->get('director2'));
@@ -194,62 +157,37 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(Director::class, $container->get('director3'));
         $this->assertTrue($container->get('director3') === $container->get('director3'));
 
-        //Similar to define
-        $container->set('director4', new Definition(Director::class, [
-            'name' => 'Bob',
-            'age' => 45
-        ]));
-        $this->assertInstanceOf(Director::class, $container->get('director4'));
-        $this->assertFalse($container->get('director4') === $container->get('director4'));
-
         $this->expectException(ConfigException::class);
         $container->set('service', ['hello' => 'world']);
     }
 
     public function testSetWithShare()
     {
-        $container = $this->getContainer();
+        $container = new Container();
         //Similar to delegate
         $container->set('director', function () {
             return new Director('James', 26);
-        }, true);
+        });
+        $container->share('director');
         $this->assertInstanceOf(Director::class, $container->get('director'));
         $this->assertTrue($container->get('director') === $container->get('director'));
 
         //Similar to bind
-        $container->set('director2', Director::class, true);
+        $container->set('director2', Director::class);
+        $container->share('director2');
         $this->assertInstanceOf(Director::class, $container->get('director2'));
         $this->assertTrue($container->get('director2') === $container->get('director2'));
 
         //Similar to instance
-        $container->set('director3', new Director(), true);
+        $container->set('director3', new Director());
+        $container->share('director3');
         $this->assertInstanceOf(Director::class, $container->get('director3'));
         $this->assertTrue($container->get('director3') === $container->get('director3'));
-
-        //Similar to define
-        $container->set('director4', new Definition(Director::class, [
-            'name' => 'Bob',
-            'age' => 45
-        ]), true);
-        $this->assertInstanceOf(Director::class, $container->get('director4'));
-        $this->assertTrue($container->get('director4') === $container->get('director4'));
-    }
-
-    public function testGetWithForceNew()
-    {
-        $container = $this->getContainer();
-        //Similar to delegate
-        $container->set('director', function () {
-            return new Director('James', 26);
-        }, true);
-
-        $this->assertTrue($container->get('director')  === $container->get('director'));
-        $this->assertFalse($container->get('director')  === $container->get('director', true));
     }
 
     public function testGetWithArguments()
     {
-        $container = $this->getContainer();
+        $container = new Container();
         $director = $container->get(Director::class, [
             'age' => 26
         ]);
@@ -264,7 +202,7 @@ class ContainerTest extends TestCase
 
     public function testGetWithReference()
     {
-        $container = $this->getContainer();
+        $container = new Container();
         $container->set('director', new Director('Bob', 45));
         $container->bind(ActorInterface::class, Actor::class);
 
@@ -280,7 +218,7 @@ class ContainerTest extends TestCase
 
     public function testParameters()
     {
-        $container = $this->getContainer();
+        $container = new Container();
         $container->setParameters([
             'foo' => 'bar'
         ]);
@@ -296,11 +234,11 @@ class ContainerTest extends TestCase
 
     public function testSimpleGlobalParameter()
     {
-        $container = $this->getContainer();
+        $container = new Container();
         $container->setParameters([
             'directorName' => 'James'
         ]);
-        $container->delegate('director', function (Container $container) {
+        $container->call('director', function (Container $container) {
             return new Director($container->getParameter('directorName'), 26);
         });
         $this->assertEquals('James', $container->get('director')->getName());
@@ -308,7 +246,7 @@ class ContainerTest extends TestCase
 
     public function testGlobalParameter()
     {
-        $container = $this->getContainer();
+        $container = new Container();
         $container->setParameters([
             'directorName' => 'James',
             'director' => [ //支持点号获取深度数据结构
@@ -316,7 +254,7 @@ class ContainerTest extends TestCase
             ]
         ]);
         //支持点号访问
-        $container->define('director', Director::class, [
+        $container->define('director', Director::class)->setArguments([
             '%directorName%',
             '%director.age%'
         ]);
