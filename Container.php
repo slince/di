@@ -5,10 +5,10 @@
  */
 namespace Slince\Di;
 
-use Psr\Container\ContainerInterface;
 use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\DependencyInjectionException;
 use Slince\Di\Exception\NotFoundException;
+use Interop\Container\ContainerInterface;
 
 class Container implements ContainerInterface
 {
