@@ -36,6 +36,7 @@ class ContainerTest extends TestCase
         $container = new Container();
         $director = new Director();
         $container->instance('director', $director);
+        $this->assertTrue($container->has('director'));
         $this->assertInstanceOf(Director::class, $container->get('director'));
         $this->assertTrue($container->get('director') === $director);
         $this->assertTrue($container->get('director') === $container->get('director'));
@@ -232,6 +233,26 @@ class ContainerTest extends TestCase
         ]);
         $this->assertEquals('Bob', $movie->getDirector()->getName());
         $this->assertEquals(45, $movie->getDirector()->getAge());
+    }
+
+    public function testGetWithMissingRequiredParameters()
+    {
+        $container = new Container();
+        $container->call('director', function($name, $age){
+            return new Director($name, $age);
+        });
+        $this->expectException(DependencyInjectionException::class);
+        $container->get('director', [1 => 18]);
+    }
+
+    public function testGetWithMissingOptionalClassDependency()
+    {
+        $container = new Container();
+        $container->call('director', function($name, $age, ActorInterface $actor = null){
+            $this->assertNull($actor);
+            return new Director($name, $age);
+        });
+        $container->get('director', [0 => 'James', 1 => 18]);
     }
 
     public function testParameters()

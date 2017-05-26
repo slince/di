@@ -44,6 +44,7 @@ class Container implements ContainerInterface
     public function __construct()
     {
         $this->parameters = new ParameterStore();
+        $this->instance($this);
     }
 
     /**
@@ -349,7 +350,6 @@ class Container implements ContainerInterface
     {
         if (is_callable($definition)) {
             if ($arguments && ($definition instanceof \Closure || is_string($definition))) {
-                $arguments['container'] = $this;
                 $arguments = $this->resolveFunctionArguments(
                     new \ReflectionFunction($definition),
                     $arguments

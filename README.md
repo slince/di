@@ -37,7 +37,7 @@ Get a instance of container like this:
 $container = new Slince\Di\Container\Container();
 ```
 
-Assume some class and interface like so: 
+Assume some classes and interfaces like so: 
 
 ```php
 interface ActorInterface
@@ -97,7 +97,7 @@ var_dump($container->get('director') === $director); //true
 // you can also bind it directly without given service name
 $container->instance('director', new Director());
 ```
-Container will share the instance, because the container thinks it's a signleton.
+Container will share the instance, because the container thinks it's a singleton.
 
 #### Bind a callable
 
@@ -107,7 +107,7 @@ $container->call('director', function(){
 });
 var_dump($container->get('director') instanceof Director::class); //true
 ```
-You should provide a valid callable function. It's useful to register an service with factory method.
+You should provide a valid callable function. It's useful to register a service with factory method.
 
 ```php
 $container->call('director', [Director::class, 'factory']);
