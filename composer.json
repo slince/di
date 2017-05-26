@@ -1,7 +1,7 @@
 {
     "name": "slince/di",
     "description": "A flexible dependency injection container",
-    "keywords": ["di", "ioc", "container", "dependency injection"],
+    "keywords": ["di", "ioc", "container", "dependency injection", "PSR-11", "injection"],
     "license": "MIT",
     "authors": [
         {
