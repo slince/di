@@ -11,12 +11,12 @@ configuration as possible. It is an implementation of [PSR-11](https://github.co
 
 ## Installation via composer
 
-Add "slince/di": "~1.0" to the require block in your composer.json and then run composer install.
+Add "slince/di": "~2.0" to the require block in your composer.json and then run composer install.
 
 ```json
 {
     "require": {
-        "slince/di": "~1.0"
+        "slince/di": "~2.0"
     }
 }
 ```
