@@ -99,7 +99,7 @@ $container->instance('director', new Director());
 ```
 Container will share the instance, because the container thinks it's a singleton.
 
-#### Bind a callable
+#### Bind a callable function
 
 ```php
 $container->call('director', function(){
@@ -125,7 +125,7 @@ $container->define('director', Director::class)
 ```
 It's also allowed that use argument position.
 
-```
+```php
 $container->define('director', Director::class)
     ->setArguments([0=>'James', 1=>26]);
 ```

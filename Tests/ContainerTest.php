@@ -31,6 +31,18 @@ class ContainerTest extends TestCase
         $container->call('director', 'not-exists-function');
     }
 
+    public function testCallParameters()
+    {
+        $container = new Container();
+        $container->call('director', function ($age, Container $container, $name) {
+            $this->assertInstanceOf(Container::class, $container);
+            return new Director($name, $age);
+        });
+        $director = $container->get('director', ['name' => 'James', 'age' => 26]);
+        $this->assertEquals('James', $director->getName());
+        $this->assertEquals(26, $director->getAge());
+    }
+
     public function testInstance()
     {
         $container = new Container();

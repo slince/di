@@ -70,7 +70,7 @@ class Container implements ContainerInterface
     public function call($name, $creation)
     {
         if (!is_callable($creation)) {
-            throw new ConfigException(sprintf("Delegate expects a valid callable or executable class::method string at Argument 2"));
+            throw new ConfigException(sprintf("Call expects a valid callable or executable class::method string"));
         }
         $this->definitions[$name] = $creation;
         return $this;
@@ -301,7 +301,7 @@ class Container implements ContainerInterface
                 isset($contextBindings[$dependencyName]) && $dependencyName = $contextBindings[$dependencyName];
                 try {
                     $functionArguments[] = $this->get($dependencyName);
-                } catch (DependencyInjectionException $exception) {
+                } catch (NotFoundException $exception) {
                     if ($parameter->isOptional()) {
                         $functionArguments[] = $parameter->getDefaultValue();
                     } else {
