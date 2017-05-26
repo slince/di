@@ -1,4 +1,4 @@
-﻿# Dependency Injection Component
+﻿# Dependency Injection Container
 
 [![Build Status](https://img.shields.io/travis/slince/di/master.svg?style=flat-square)](https://travis-ci.org/slince/di)
 [![Coverage Status](https://img.shields.io/codecov/c/github/slince/di.svg?style=flat-square)](https://codecov.io/github/slince/di)
@@ -7,7 +7,7 @@
 [![Scrutinizer](https://img.shields.io/scrutinizer/g/slince/di.svg?style=flat-square)](https://scrutinizer-ci.com/g/slince/di/?branch=master)
 
 This package is a flexible IOC container for PHP with a focus on being lightweight and fast as well as requiring as little 
-configuration as possible.  
+configuration as possible. It is an implementation of [PSR-11](https://github.com/container-interop/fig-standards/blob/master/proposed/container.md)
 
 ## Installation via composer
 

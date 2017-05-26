@@ -146,6 +146,7 @@ class ContainerTest extends TestCase
         $this->assertTrue($container->has(Director::class));
 
         $container->instance(new Director());
+        $container->get(Director::class);
         $this->assertTrue($container->has(Director::class));
 
         $container->bind(ActorInterface::class, Actor::class);
