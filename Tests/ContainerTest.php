@@ -283,6 +283,50 @@ class ContainerTest extends TestCase
         $this->assertEquals('baz', $container->getParameter('bar'));
     }
 
+    public function testResolveParameters()
+    {
+        $container = new Container();
+        $container->setParameters([
+            'foo' => 'James',
+            'bar' => 45
+        ]);
+        $container->call('director', function(array $profile){
+            return new Director($profile['name'], $profile['age']);
+        });
+        $director = $container->get('director', [
+            'profile' => [
+                 'name' => '%foo% Bob',
+                 'age' => '%bar%',
+            ]
+        ]);
+        $this->assertEquals('James Bob', $director->getName());
+        $this->assertEquals(45, $director->getAge());
+
+        try {
+             $container->get('director', [
+                'profile' => [
+                    'name' => '%foo% Bob',
+                    'age' => '%baz%',
+                ]
+            ]);
+            $this->fail();
+        } catch (\Exception $exception) {
+            $this->assertContains('is not defined', $exception->getMessage());
+        }
+
+        try {
+            $container->get('director', [
+                'profile' => [
+                    'name' => '%baz% Bob',
+                    'age' => '%bar%',
+                ]
+            ]);
+            $this->fail();
+        } catch (\Exception $exception) {
+            $this->assertContains('is not defined', $exception->getMessage());
+        }
+    }
+
     public function testSimpleGlobalParameter()
     {
         $container = new Container();

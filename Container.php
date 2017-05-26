@@ -359,10 +359,8 @@ class Container implements ContainerInterface
             $instance = call_user_func_array($definition, $arguments);
         } elseif ($definition instanceof ClassDefinition) {
             $instance = $this->getClassDefinitionResolver()->resolve($definition, $arguments);
-        } elseif (is_object($definition)) {
-            $instance = $definition;
         } else {
-            throw new ConfigException(sprintf("Unexpected object definition type '%s'", gettype($definition)));
+            $instance = $definition;
         }
         return $instance;
     }
@@ -396,8 +394,8 @@ class Container implements ContainerInterface
 
     /**
      * Formats parameter value
-     * @param $value
-     * @return mixed
+     * @param string $value
+     * @return string
      * @throws DependencyInjectionException
      */
     protected function formatParameter($value)
