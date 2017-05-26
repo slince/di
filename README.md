@@ -192,11 +192,12 @@ $container->get(Director::class, [
     'name' => '%directorName%',
     'age' => '%director.age%' //Support dot access to deep data
 ]);
-//In the call "define"
-$container->define('director', Director::class, [
-    'name' => '%directorName%',
-    'age' => '%director.age%'
-]);
+//when register a class definition
+$container->define('director', Director::class)
+     ->setArguments([
+        'name' => '%directorName%',
+        'age' => '%director.age%'
+    ]);
 $container->get('director');
 ```
 
