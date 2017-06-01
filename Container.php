@@ -153,17 +153,6 @@ class Container implements ContainerInterface
      *     return new Student();
      * });
      *
-     * //Add an instance of "Slince\Di\Definition"
-     * $container->set('student', new Definition('Foo\Bar\StudentClass', [
-     *      'gender' => 'boy',
-     *      'school' => new Reference('school')
-     * ], [
-     *     'setAge' => [18]
-     * ], [
-     *     'father' => 'James',
-     *     'mather' => 'Sophie'
-     * ]));
-     *
      * //Add a class definition
      * $container->set('student', Foo\Bar\StudentClass);
      * ```
