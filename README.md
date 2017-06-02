@@ -11,12 +11,12 @@ configuration as possible. It is an implementation of [PSR-11](https://github.co
 
 ## Installation via composer
 
-Add "slince/di": "~2.0" to the require block in your composer.json and then run composer install.
+Add "slince/di": "^2.0" to the require block in your composer.json and then run composer install.
 
 ```json
 {
     "require": {
-        "slince/di": "~2.0"
+        "slince/di": "^2.0"
     }
 }
 ```
@@ -34,20 +34,23 @@ composer require slince/di
 Get a instance of container like this:
 
 ```php
-$container = new Slince\Di\Container\Container();
+$container = new Slince\Di\Container();
 ```
 
 Assume some classes and interfaces like so: 
 
 ```php
 interface ActorInterface
-{}
+{
+}
 
 class Actor implements ActorInterface
-{}
+{
+}
 
 class Actress implements ActorInterface
-{}
+{
+}
 
 class Director
 {
@@ -187,12 +190,13 @@ $container->setParameters([
     ]
 ]);
 
-//when instantiated
+//When you get the service
 $container->get(Director::class, [
     'name' => '%directorName%',
     'age' => '%director.age%' //Support dot access to deep data
 ]);
-//when register a class definition
+
+//when you register a class definition
 $container->define('director', Director::class)
      ->setArguments([
         'name' => '%directorName%',
