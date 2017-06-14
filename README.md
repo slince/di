@@ -97,8 +97,9 @@ $director = new Director();
 $container->instance('director', $director);
 var_dump($container->get('director') === $director); //true
 
-// you can also bind it directly without given service name
-$container->instance('director', new Director());
+// You can also register it directly without given service name
+$container->instance(new Director());
+$container->get(Director::class); //Get it by class name
 ```
 Container will share the instance, because the container thinks it's a singleton.
 
