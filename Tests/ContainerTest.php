@@ -219,6 +219,21 @@ class ContainerTest extends TestCase
         }
     }
 
+    public function testReference()
+    {
+        $container = new Container();
+        $container->register('director',Director::class);
+        $container->register('actor',Actor::class);
+        $container->register(Movie::class)
+            ->addArgument('@director')
+            ->addArgument(new Reference('actor'));
+
+        $movie = $container->get(Movie::class);
+        $this->assertInstanceOf(Movie::class, $movie);
+        $this->assertSame($container->get('director'), $movie->getDirector());
+        $this->assertSame($container->get('actor'), $movie->getActor());
+    }
+
     public function testParameters()
     {
         $container = new Container();

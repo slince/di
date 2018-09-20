@@ -50,6 +50,18 @@ class Foo
     }
 }
 
+class Bar
+{
+    public $foo;
+    public $baz;
+    
+    public function __construct($foo, $baz)
+    {
+        $this->foo = $foo;
+        $this->baz = $baz;
+    }
+}
+
 $container = new Slince\Di\Container();
 
 $container->register(Acme\Foo::class);
@@ -88,37 +100,26 @@ $container->setDefaults([
     'autowire' => false,
 ]);
 $container->register('foo', Acme\Foo::class)
-    ->addArgument(new Bar());  // You have to provide $bar
+    ->addArgument(new Acme\Bar());  // You have to provide $bar
     
 var_dump($container->get('foo') instanceof Acme\Foo::class);  // true
 ```
+### Reference
+
+```php
+$container->register('bar', Acme\Bar::class);
+$container->register('foo', Acme\Foo::class)
+    ->addArgument(new Slince\Di\Reference('bar')); //refer to 'bar'
+    // You can also use like following:
+    // ->addArgument('@bar'); 
+    
+var_dump($container->get('bar') === $container->get('foo')->bar));    // true
+```
+
 
 ### Container Parameters
 
 ```php
-namespace Acme;
-
-class Bar
-{
-    protected $foo;
-    protected $baz;
-    
-    public function __construct($foo, $baz)
-    {
-        $this->foo = $foo;
-        $this->baz = $baz;
-    }
-    
-    public function getFoo()
-    {
-        return $this->foo;
-    }
-    public function getBaz()
-    {
-        return $this->baz;
-    }
-}
-
 $container->setParameters([
     'foo' => 'hello',
     'bar' => [
@@ -133,8 +134,8 @@ $container->register('bar', Acme\Bar::class)
     ]);
 
 $bar = $container->get('bar');
-var_dump($bar->getFoo());  // hello
-var_dump($bar->getBaz()); //world
+var_dump($bar->foo);  // hello
+var_dump($bar->bar); // world
 ```
 
 ### Definition tag
