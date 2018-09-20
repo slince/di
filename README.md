@@ -11,7 +11,7 @@ configuration as possible. It is an implementation of [PSR-11](https://github.co
 
 ## Installation
 
-Install via composer:
+Install via composer.
 
 ```json
 {
