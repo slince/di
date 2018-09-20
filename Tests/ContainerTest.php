@@ -14,8 +14,6 @@ use Slince\Di\Tests\TestClass\Actress;
 use Slince\Di\Tests\TestClass\Director;
 use Slince\Di\Tests\TestClass\Movie;
 
-error_reporting(E_ALL ^ E_USER_DEPRECATED);
-
 class ContainerTest extends TestCase
 {
     public function testFactory()
@@ -28,8 +26,6 @@ class ContainerTest extends TestCase
         $container->register('director2', [Director::class, 'factory']);
 
         $this->assertInstanceOf(Director::class, $container->get('director2'));
-        $this->expectException(ConfigException::class);
-        $container->register('director', 'not-exists-function');
     }
 
     public function testFactoryWithParameters()
@@ -56,9 +52,6 @@ class ContainerTest extends TestCase
 
         $container->register(new Director());
         $this->assertTrue($container->has(Director::class));
-
-        $this->expectException(ConfigException::class);
-        $container->register('not-an-object');
 
     }
 
@@ -121,7 +114,7 @@ class ContainerTest extends TestCase
         $container->register('director2', function () {
             return new Director('James', 26);
         })->setShared(false);
-        $this->assertFalse($container->get('director') === $container->get('director'));
+        $this->assertFalse($container->get('director2') === $container->get('director2'));
     }
 
     public function testWithMissingRequiredParameters()
