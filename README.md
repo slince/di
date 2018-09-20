@@ -9,9 +9,9 @@
 This package is a flexible IOC container for PHP with a focus on being lightweight and fast as well as requiring as little 
 configuration as possible. It is an implementation of [PSR-11](https://github.com/container-interop/fig-standards/blob/master/proposed/container.md)
 
-## Installation via composer
+## Installation
 
-Add "slince/di": "^3.0" to the require block in your composer.json and then run composer install.
+Install via composer:
 
 ```json
 {
@@ -24,7 +24,7 @@ Add "slince/di": "^3.0" to the require block in your composer.json and then run 
 Alternatively, require package use composer cli:
 
 ```bash
-composer require slince/di
+composer require slince/di ^3.0
 ```
 
 ## Usage
