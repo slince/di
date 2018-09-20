@@ -12,11 +12,7 @@ class DefinitionTest extends TestCase
         $definition = new Definition(Director::class);
         $definition->setArgument(0, 'LiAn');
         $this->assertEquals('LiAn', $definition->getArgument(0));
-    }
 
-    public function testSetAndGetArguments()
-    {
-        $definition = new Definition(Director::class);
         $arguments = ['Jumi', 12];
         $definition->setArguments($arguments);
         $this->assertEquals($arguments, $definition->getArguments());
@@ -27,6 +23,13 @@ class DefinitionTest extends TestCase
         $definition = new Definition(Director::class);
         $definition->addMethodCall('setName', ['LiAn']);
         $this->assertEquals(['setName', ['LiAn']], $definition->getMethodCalls()[0]);
+
+        $definition->setMethodCalls([
+            ['setName', ['LiAn']],
+            ['setAge', [20]],
+        ]);
+        $this->assertTrue($definition->hasMethodCall('setName'));
+        $this->assertTrue($definition->hasMethodCall('setAge'));
     }
 
     public function testProperty()
@@ -37,6 +40,7 @@ class DefinitionTest extends TestCase
             'foo' => 'bar'
         ]);
         $this->assertEquals(['foo'=>'bar'], $definition->getProperties());
+
         $definition->setProperty('bar', 'baz');
         $this->assertEquals('baz', $definition->getProperty('bar'));
     }
@@ -44,7 +48,6 @@ class DefinitionTest extends TestCase
     public function testAutowire()
     {
         $definition = new Definition();
-        $this->assertNull($definition->isAutowired());
         $definition->setAutowired(true);
         $this->assertTrue($definition->isAutowired());
     }
@@ -52,8 +55,24 @@ class DefinitionTest extends TestCase
     public function testShare()
     {
         $definition = new Definition();
-        $this->assertNull($definition->isShared());
         $definition->setShared(true);
         $this->assertTrue($definition->isShared());
+    }
+
+    public function testTag()
+    {
+        $definition = new Definition();
+        $definition->addTag('my.tag');
+        $this->assertEquals([[]], $definition->getTag('my.tag'));
+        $definition->addTag('my.tag1');
+        $this->assertEquals([
+            'my.tag' => [[]],
+            'my.tag1' => [[]],
+        ], $definition->getTags());
+        $definition->clearTag('my.tag');
+        $this->assertFalse($definition->hasTag('my.tag'));
+
+        $definition->clearTags();
+        $this->assertFalse($definition->hasTag('my.tag1'));
     }
 }

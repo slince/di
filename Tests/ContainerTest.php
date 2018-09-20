@@ -83,6 +83,37 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(Actor::class, $movie->getActor());
     }
 
+    public function testRegisterWithNumericArguments()
+    {
+        $container = new Container();
+        $container->register('director', function($name, $age){
+            return new Director($name, $age);
+        })->addArgument('foo')
+            ->addArgument('bar');
+        $director = $container->get('director');
+        $this->assertEquals('foo', $director->getName());
+        $this->assertEquals('bar', $director->getAge());
+    }
+
+    public function testRegisterWithMethodCalls()
+    {
+        $container = new Container();
+        $container->register(Director::class)
+            ->addMethodCall('setAge', [20]);
+        $director = $container->get(Director::class);
+        $this->assertEquals(20, $director->getAge());
+
+        $container->register('director2',Director::class)
+            ->setMethodCalls([
+                ['setAge', ['age' => 25]],
+                ['setName', ['foo']],
+            ]);
+
+        $director = $container->get('director2');
+        $this->assertEquals('foo', $director->getName());
+        $this->assertEquals(25, $director->getAge());
+    }
+
     public function testHas()
     {
         $container = new Container();
@@ -276,5 +307,17 @@ class ContainerTest extends TestCase
         $container->setAlias('director-alias', 'director');
         $this->assertEquals('director', $container->getAlias('director-alias'));
         $this->assertSame($container->get('director'), $container->get('director-alias'));
+    }
+
+    public function testTags()
+    {
+        $container = new Container();
+        $container->register('director', Director::class)
+            ->addTag('my.tag', array('hello' => 'world'));
+
+         $serviceIds = $container->findTaggedServiceIds('my.tag');
+         $this->assertEquals([
+              'director' => [['hello' => 'world']]
+         ], $serviceIds);
     }
 }

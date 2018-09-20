@@ -137,6 +137,19 @@ var_dump($bar->getFoo());  // hello
 var_dump($bar->getBaz()); //world
 ```
 
+### Definition tag
+
+```php
+$container->register('foo')->addTag('my.tag', array('hello' => 'world'));
+
+$serviceIds = $container->findTaggedServiceIds('my.tag');
+
+foreach ($serviceIds as $serviceId => $tags) {
+    foreach ($tags as $tag) {
+        echo $tag['hello'];
+    }
+}
+```
 ## License
  
 The MIT license. See [MIT](https://opensource.org/licenses/MIT)

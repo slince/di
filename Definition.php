@@ -406,28 +406,4 @@ class Definition
     {
         return $this->shared;
     }
-
-    /**
-     * Sets the visibility of this service.
-     *
-     * @param bool $boolean
-     *
-     * @return $this
-     */
-    public function setPublic($boolean)
-    {
-        $this->public = (bool) $boolean;
-
-        return $this;
-    }
-
-    /**
-     * Whether this service is public facing.
-     *
-     * @return bool
-     */
-    public function isPublic()
-    {
-        return $this->public;
-    }
 }

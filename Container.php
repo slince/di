@@ -195,6 +195,33 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Returns service ids for a given tag.
+     *
+     * Example:
+     *
+     *     $container->register('foo')->addTag('my.tag', array('hello' => 'world'));
+     *
+     *     $serviceIds = $container->findTaggedServiceIds('my.tag');
+     *     foreach ($serviceIds as $serviceId => $tags) {
+     *         foreach ($tags as $tag) {
+     *             echo $tag['hello'];
+     *         }
+     *     }
+     * @param string $name
+     * @return array
+     */
+    public function findTaggedServiceIds($name)
+    {
+        $tags = array();
+        foreach ($this->definitions as $id => $definition) {
+            if ($definition->hasTag($name)) {
+                $tags[$id] = $definition->getTag($name);
+            }
+        }
+        return $tags;
+    }
+
+    /**
      * Gets all global parameters
      * @return array
      */
