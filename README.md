@@ -116,7 +116,6 @@ $container->register('foo', Acme\Foo::class)
 var_dump($container->get('bar') === $container->get('foo')->bar));    // true
 ```
 
-
 ### Container Parameters
 
 ```php
