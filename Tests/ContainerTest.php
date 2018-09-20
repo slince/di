@@ -185,8 +185,7 @@ class ContainerTest extends TestCase
                     'age' => '%bar%',
                 ]
             ]);
-
-            $container->get('director');
+            $container->get('director2');
             $this->fail();
         } catch (\Exception $exception) {
             $this->assertContains('is not defined', $exception->getMessage());
@@ -205,7 +204,7 @@ class ContainerTest extends TestCase
         $this->assertEquals('James', $container->get('director')->getName());
     }
 
-    public function testGlobalParameter()
+    public function testGlobalParameterUseDotAccess()
     {
         $container = new Container();
         $container->setParameters([
@@ -220,9 +219,5 @@ class ContainerTest extends TestCase
         ]);
         $this->assertEquals('James', $container->get('director')->getName());
         $this->assertEquals(26, $container->get('director')->getAge());
-
-        $this->assertEquals(26, $container->get(Director::class, [
-            'age' => '%director.age%'
-        ])->getAge());
     }
 }

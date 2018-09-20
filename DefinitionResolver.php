@@ -41,8 +41,8 @@ class DefinitionResolver
             $reflection = new \ReflectionObject($instance);
         } else {
             list($reflection, $instance) = $this->createFromClass($definition);
-
         }
+
         $this->invokeMethods($definition, $instance, $reflection);
         $this->invokeProperties($definition, $instance);
 
@@ -53,15 +53,15 @@ class DefinitionResolver
     {
         $class = $definition->getClass();
         if ($class === null) {
-            throw new ConfigException('You must set a class or factory for definition.');
+            throw new DependencyInjectionException('You must set a class or factory for definition.');
         }
         try {
             $reflection = new \ReflectionClass($definition->getClass());
         } catch (\ReflectionException $e) {
-            throw new ConfigException(sprintf('Class "%s" is invalid', $definition->getClass()));
+            throw new DependencyInjectionException(sprintf('Class "%s" is invalid', $definition->getClass()));
         }
         if (!$reflection->isInstantiable()) {
-            throw new ConfigException(sprintf('Can not instantiate "%s"', $definition->getClass()));
+            throw new DependencyInjectionException(sprintf('Can not instantiate "%s"', $definition->getClass()));
         }
         $constructor = $reflection->getConstructor();
         if (is_null($constructor)) {
@@ -73,12 +73,14 @@ class DefinitionResolver
         return [$reflection, $instance];
     }
 
+    /**
+     * @param Definition $definition
+     * @return object
+     */
     protected function createFromFactory(Definition $definition)
     {
         $factory = $definition->getFactory();
-
         try {
-
             $reflection = is_array($factory)
                 ? new \ReflectionMethod($factory[0], $factory[1])
                 : new \ReflectionFunction($factory);
@@ -93,8 +95,6 @@ class DefinitionResolver
         } catch (\ReflectionException $exception) {
             throw new ConfigException('The factory is invalid.');
         }
-
-        return $instance;
     }
 
     /**

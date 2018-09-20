@@ -26,7 +26,7 @@ class DefinitionTest extends TestCase
     {
         $definition = new Definition(Director::class);
         $definition->addMethodCall('setName', ['LiAn']);
-        $this->assertEquals(['setName', ['LiAn']], $definition->getMethodCalls());
+        $this->assertEquals(['setName', ['LiAn']], $definition->getMethodCalls()[0]);
     }
 
     public function testProperty()
