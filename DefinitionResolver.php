@@ -217,16 +217,19 @@ class DefinitionResolver
         if ($value instanceof Reference) {
             return $this->container->get($value->getId());
         }
-        if ('@' === $value[0]) {
-            return $this->container->get(substr($value, 1));
-        }
-        //"fool%bar%baz"
-        return preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
-            $key = $matches[1];
-            if ($parameter = $this->container->getParameter($key)) {
-                return $parameter;
+        if (is_string($value) && ($len = strlen($value)) > 0) {
+            if ($len >= 2 && '@' === $value[0]) {
+                return $this->container->get(substr($value, 1));
             }
-            throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
-        }, $value);
+            //"fool%bar%baz"
+            return preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
+                $key = $matches[1];
+                if ($parameter = $this->container->getParameter($key)) {
+                    return $parameter;
+                }
+                throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
+            }, $value);
+        }
+        return $value;
     }
 }

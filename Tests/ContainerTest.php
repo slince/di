@@ -193,6 +193,14 @@ class ContainerTest extends TestCase
         } catch (\Exception $exception) {
             $this->assertInstanceOf(DependencyInjectionException::class, $exception);
         }
+
+        $container->register(Movie::class)
+            ->addArgument(new Director())
+            ->addArgument(new Actor());
+        $movie = $container->get(Movie::class);
+        $this->assertInstanceOf(Movie::class, $movie);
+        $this->assertInstanceOf(Director::class, $movie->getDirector());
+        $this->assertInstanceOf(Actor::class, $movie->getActor());
     }
 
     public function testConfigureAutowire()
