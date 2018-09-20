@@ -11,7 +11,7 @@ configuration as possible. It is an implementation of [PSR-11](https://github.co
 
 ## Installation via composer
 
-Add "slince/di": "^2.0" to the require block in your composer.json and then run composer install.
+Add "slince/di": "^3.0" to the require block in your composer.json and then run composer install.
 
 ```json
 {
@@ -71,7 +71,7 @@ var_dump($foo instanceof Acme\Foo);      // true
 
 ### Configure container 
 
-- "singinton"
+- Singleton
 
 ```php
 $container->setDefaults([
@@ -81,7 +81,7 @@ $container->register('foo', Acme\Foo::class);
 var_dump($container->get('foo') === $container->get('foo'));      // false
 ```
 
-- "autowire"
+- Autowire
 
 ```php
 $container->setDefaults([
