@@ -13,10 +13,11 @@ namespace Slince\Di;
 
 use Dflydev\DotAccessData\Data;
 
-class ParameterStore extends Data
+class ParameterBag extends Data
 {
     /**
      * Sets array of parameters
+     *
      * @param $parameters
      */
     public function setParameters($parameters)
@@ -26,6 +27,7 @@ class ParameterStore extends Data
 
     /**
      * Adds array of parameters
+     *
      * @param array $parameters
      */
     public function addParameters(array $parameters)
@@ -35,6 +37,7 @@ class ParameterStore extends Data
 
     /**
      * Sets parameter with given name and value
+     *
      * @param int|string $name
      * @param mixed $value
      */
@@ -45,7 +48,8 @@ class ParameterStore extends Data
 
     /**
      * Gets the parameter by its name
-     * @param $name
+     *
+     * @param string $name
      * @param mixed $default
      * @return mixed
      */

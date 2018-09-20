@@ -14,31 +14,23 @@ namespace Slince\Di;
 class Reference
 {
     /**
-     * Service name
+     * Service ID
      * @var string
      */
-    protected $name;
+    protected $id;
 
-    public function __construct($name)
+    public function __construct($id)
     {
-        $this->name = $name;
+        $this->id = $id;
     }
 
     /**
-     * Get service name
+     * Get service ID
+     *
      * @return string
      */
-    public function getName()
+    public function getId()
     {
-        return $this->name;
-    }
-
-    /**
-     * Set service name
-     * @param string $name
-     */
-    public function setName($name)
-    {
-        $this->name = $name;
+        return $this->id;
     }
 }

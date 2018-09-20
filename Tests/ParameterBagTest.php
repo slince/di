@@ -2,13 +2,13 @@
 namespace Slince\Di\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Slince\Di\ParameterStore;
+use Slince\Di\ParameterBag;
 
-class ParameterStoreTest extends TestCase
+class ParameterBagTest extends TestCase
 {
     public function testParameter()
     {
-        $parameters = new ParameterStore();
+        $parameters = new ParameterBag();
         $this->assertEquals([], $parameters->toArray());
         $parameters->setParameters([
             'foo' => 'bar'

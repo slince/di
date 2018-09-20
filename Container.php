@@ -22,189 +22,128 @@ class Container implements ContainerInterface
      * Array of singletons
      * @var array
      */
-    protected $shares = [];
+    protected $services = [];
 
     /**
-     * Array pf definitions, support instance,callable,Definition, class
-     * @var array
+     * Array of Definitions
+     *
+     * @var Definition[]
      */
     protected $definitions = [];
 
     /**
-     * Array of interface bindings
-     * @var array
-     */
-    protected $contextBindings = [];
-
-    /**
      * Array of parameters
-     * @var ParameterStore
+     * @var ParameterBag
      */
     protected $parameters;
 
     /**
-     * @var ClassDefinitionResolver
+     * @var DefinitionResolver
      */
-    protected $classDefinitionResolver;
+    protected $definitionResolver;
+
+    /**
+     * Defaults for the container.
+     *
+     * [
+     *     'share' => true,
+     *     'autowire' => true
+     * ]
+     * @var array
+     */
+    protected $defaults = [
+        'share' => true,
+        'autowire' => true
+    ];
 
     public function __construct()
     {
-        $this->parameters = new ParameterStore();
-        $this->instance($this);
+        $this->parameters = new ParameterBag();
+        $this->definitionResolver = new DefinitionResolver($this);
+        $this->register($this);
     }
 
     /**
-     * Add a Definition class
-     * @param string $name
-     * @param string $class
-     * @return ClassDefinition
+     * Register a definition.
+     *
+     * @param string $id
+     * @param mixed $concrete
+     * @return Definition
      */
-    public function define($name, $class)
+    public function register($id, $concrete = null)
     {
-        $definition = new ClassDefinition($class);
-        $this->definitions[$name] = $definition;
+        if (is_object($id)) {
+            $concrete = $id;
+            $id = get_class($id);
+        }
+
+        $definition = new Definition();
+
+        if (null === $concrete) {
+            $definition->setClass($id);
+        } elseif (is_string($concrete)) {
+            $definition->setClass($concrete);
+        } elseif ($concrete instanceof \Closure || is_array($concrete)) {
+            $definition->setFactory($concrete);
+        } elseif (is_object($concrete)) {
+            $definition->setFactory(function() use ($concrete){
+                return $concrete;
+            })->setClass(get_class($concrete));
+        } else {
+            throw new ConfigException('expects a valid concrete');
+        }
+
+        $definition = $this->setDefinition($id, $definition);
+
+        //Apply defaults.
+        $definition
+            ->setShared($this->defaults['share'])
+            ->setAutowired($this->defaults['autowire']);
         return $definition;
     }
 
     /**
-     * Bind an callable to the container with its name
-     * @param string $name
-     * @param mixed $creation A invalid callable
-     * @throws ConfigException
-     * @return $this
-     */
-    public function call($name, $creation)
-    {
-        if (!is_callable($creation)) {
-            throw new ConfigException(sprintf("Call expects a valid callable or executable class::method string"));
-        }
-        $this->definitions[$name] = $creation;
-        return $this;
-    }
-
-    /**
-     * Bind an instance to the container with its name
-     * ```
-     * $container->instance('user', new User());
-     * //Or just give instance
-     * $container->instance(new User());
+     * Set a definition.
      *
-     * ```
-     * @param string $name
-     * @param object $instance
-     * @throws ConfigException
-     * @return $this
-     */
-    public function instance($name, $instance = null)
-    {
-        if (func_num_args() == 1) {
-            if (!is_object($name)) {
-                throw new ConfigException(sprintf("Instance expects a valid object"));
-            }
-            $instance = $name;
-            $name = get_class($instance);
-        }
-        $this->definitions[$name] = $instance;
-        $this->share($name);
-        return $this;
-    }
-
-    /**
-     * Binds an interface or abstract class to its implementation;
-     * It's also be used to bind a service name to an existing class
-     * @param string $name
-     * @param string $implementation
-     * @param string|array $context the specified context to bind
-     * @throws ConfigException
-     * @return $this
-     */
-    public function bind($name, $implementation, $context = null)
-    {
-        if (is_null($context)) {
-            $this->define($name, $implementation);
-        } else {
-            if (is_array($context)) {
-                list($contextClass, $contextMethod) = $context;
-            } else {
-                $contextClass = $context;
-                $contextMethod = 'general';
-            }
-            isset($this->contextBindings[$contextClass][$contextMethod])
-                || ($this->contextBindings[$contextClass][$contextMethod] = []);
-            $this->contextBindings[$contextClass][$contextMethod][$name] = $implementation;
-        }
-        return $this;
-    }
-
-    /**
-     * Share the service by given name
-     * @param string $name
-     * @return $this
-     */
-    public function share($name)
-    {
-        $this->shares[$name] = null;
-        return $this;
-    }
-
-    /**
-     * Add a definition to the container
-     * ```
-     * //Add an instance like "instance" method
-     * $container->set('student', new Student());
+     * @param string $id
+     * @param Definition $definition
      *
-     * //Add a callable definition
-     * $container->set('student', 'StudentFactory::create');
-     * $container->set('student', function(){
-     *     return new Student();
-     * });
-     *
-     * //Add a class definition
-     * $container->set('student', Foo\Bar\StudentClass);
-     * ```
-     * @param string $name
-     * @param mixed $definition
-     * @throws ConfigException
-     * @return $this
+     * @return Definition
      */
-    public function set($name, $definition)
+    public function setDefinition($id, Definition $definition)
     {
-        if (is_callable($definition)) {
-            $this->call($name, $definition);
-        } elseif (is_object($definition)) {
-            $this->instance($name, $definition);
-        } elseif (is_string($definition)) {
-            $this->define($name, $definition);
-        } else {
-            throw new ConfigException(sprintf("Unexpected object definition type '%s'", gettype($definition)));
-        }
-        return $this;
+        $id = (string) $id;
+        return $this->definitions[$id] = $definition;
     }
 
     /**
-     * Get a service instance by specified name
-     * @param string $name
-     * @param array $arguments
+     * Get a service instance by specified ID
+     *
+     * @param string $id
      * @return object
      */
-    public function get($name, $arguments = [])
+    public function get($id)
     {
         //If service is singleton, return instance directly.
-        if (isset($this->shares[$name])) {
-            return $this->shares[$name];
+        if (isset($this->services[$id])) {
+            return $this->services[$id];
         }
+
         //If there is no matching definition, creates an definition automatically
-        if (!isset($this->definitions[$name])) {
-            if (class_exists($name)) {
-                $this->bind($name, $name);
+        if (!isset($this->definitions[$id])) {
+            if (class_exists($id)) {
+                $this->register($id);
             } else {
-                throw new NotFoundException(sprintf('There is no definition for "%s"', $name));
+                throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
             }
         }
-        $instance = $this->createInstanceFromDefinition($this->definitions[$name], $arguments);
+
+        // resolve instance.
+        $instance = $this->definitionResolver->resolve($this->definitions[$id]);
+
         //If the service be set as singleton mode, stores its instance
-        if (array_key_exists($name, $this->shares)) {
-            $this->shares[$name] = $instance;
+        if ($this->definitions[$id]->isShared()) {
+            $this->services[$id] = $instance;
         }
         return $instance;
     }
@@ -212,15 +151,15 @@ class Container implements ContainerInterface
     /**
      * {@inheritdoc}
      */
-    public function has($name)
+    public function has($id)
     {
-        if (isset($this->shares[$name])) {
+        if (isset($this->services[$id])) {
             return true;
         }
-        if (!isset($this->definitions[$name]) && class_exists($name)) {
-            $this->bind($name, $name);
+        if (!isset($this->definitions[$id]) && class_exists($id)) {
+            $this->register($id);
         }
-        return isset($this->definitions[$name]);
+        return isset($this->definitions[$id]);
     }
 
     /**
@@ -252,6 +191,7 @@ class Container implements ContainerInterface
 
     /**
      * Sets a parameter with its name and value
+     *
      * @param $name
      * @param mixed $value
      */
@@ -272,144 +212,24 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Resolves all arguments for the function or method.
-     * @param \ReflectionFunctionAbstract $method
-     * @param array $arguments
-     * @param array $contextBindings The context bindings for the function
-     * @throws DependencyInjectionException
-     * @return array
+     * Gets a default option of the container.
+     *
+     * @param string $option
+     * @return mixed|null|boolean
      */
-    public function resolveFunctionArguments(\ReflectionFunctionAbstract $method, array $arguments, array $contextBindings = [])
+    public function getDefault($option)
     {
-        $functionArguments = [];
-        $arguments = $this->resolveParameters($arguments);
-        //Checks whether the position is numeric
-        $isNumeric = !empty($arguments) && is_numeric(key($arguments));
-        foreach ($method->getParameters() as $parameter) {
-            $index = $isNumeric ? $parameter->getPosition() : $parameter->name;
-            //If the dependency is provided directly
-            if (isset($arguments[$index])) {
-                $functionArguments[] = $arguments[$index];
-            } elseif (($dependency = $parameter->getClass()) != null) {
-                $dependencyName = $dependency->name;
-                //Use the new dependency if the dependency name has been replaced in array of context bindings
-                isset($contextBindings[$dependencyName]) && $dependencyName = $contextBindings[$dependencyName];
-                try {
-                    $functionArguments[] = $this->get($dependencyName);
-                } catch (NotFoundException $exception) {
-                    if ($parameter->isOptional()) {
-                        $functionArguments[] = $parameter->getDefaultValue();
-                    } else {
-                        throw $exception;
-                    }
-                }
-            } elseif ($parameter->isOptional()) {
-                $functionArguments[] = $parameter->getDefaultValue();
-            } else {
-                throw new DependencyInjectionException(sprintf(
-                    'Missing required parameter "%s" when calling "%s"',
-                    $parameter->name,
-                    $method->getName()
-                ));
-            }
-        }
-        return $functionArguments;
+        return isset($this->defaults[$option]) ? $this->defaults[$option] : null;
     }
 
     /**
-     * Gets all context bindings for the class and method
-     * [
-     *     'User' => [
-     *          'original' => 'SchoolInterface'
-     *          'bind' => 'MagicSchool',
-     *     ]
-     * ]
-     * @param string $contextClass
-     * @param string $contextMethod
+     * Configure defaults.
+     *
+     * @param array $defaults
      * @return array
      */
-    public function getContextBindings($contextClass, $contextMethod)
+    public function setDefaults(array $defaults)
     {
-        if (!isset($this->contextBindings[$contextClass])) {
-            return [];
-        }
-        $contextBindings = isset($this->contextBindings[$contextClass]['general'])
-            ? $this->contextBindings[$contextClass]['general'] : [];
-        if (isset($this->contextBindings[$contextClass][$contextMethod])) {
-            $contextBindings = array_merge($contextBindings, $this->contextBindings[$contextClass][$contextMethod]);
-        }
-        return $contextBindings;
-    }
-
-    protected function createInstanceFromDefinition($definition, array $arguments)
-    {
-        if (is_callable($definition)) {
-            if ($arguments && ($definition instanceof \Closure || is_string($definition))) {
-                $arguments = $this->resolveFunctionArguments(
-                    new \ReflectionFunction($definition),
-                    $arguments
-                );
-            }
-            $arguments = $arguments ?: [$this];
-            $instance = call_user_func_array($definition, $arguments);
-        } elseif ($definition instanceof ClassDefinition) {
-            $instance = $this->getClassDefinitionResolver()->resolve($definition, $arguments);
-        } else {
-            $instance = $definition;
-        }
-        return $instance;
-    }
-
-    protected function getClassDefinitionResolver()
-    {
-        if (!is_null($this->classDefinitionResolver)) {
-            return $this->classDefinitionResolver;
-        }
-        return $this->classDefinitionResolver = new ClassDefinitionResolver($this);
-    }
-
-    /**
-     * Resolves array of parameters
-     * @param array $parameters
-     * @return array
-     */
-    protected function resolveParameters($parameters)
-    {
-        return array_map(function ($parameter) {
-            if (is_string($parameter)) {
-                $parameter = $this->formatParameter($parameter);
-            } elseif ($parameter instanceof Reference) {
-                $parameter = $this->get($parameter->getName());
-            } elseif (is_array($parameter)) {
-                $parameter = $this->resolveParameters($parameter);
-            }
-            return $parameter;
-        }, $parameters);
-    }
-
-    /**
-     * Formats parameter value
-     * @param string $value
-     * @return string
-     * @throws DependencyInjectionException
-     */
-    protected function formatParameter($value)
-    {
-        //%xx% return the parameter
-        if (preg_match("#^%([^%\s]+)%$#", $value, $match)) {
-            $key = $match[1];
-            if ($parameter = $this->parameters->getParameter($key)) {
-                return $parameter;
-            }
-            throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
-        }
-        //"fool%bar%baz"
-        return preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
-            $key = $matches[1];
-            if ($parameter = $this->parameters->getParameter($key)) {
-                return $parameter;
-            }
-            throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
-        }, $value);
+        return $this->defaults = array_merge($this->defaults, $defaults);
     }
 }
