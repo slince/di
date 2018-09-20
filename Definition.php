@@ -76,10 +76,13 @@ class Definition
      * Set class for the definition.
      *
      * @param string $class
+     * @return $this
      */
     public function setClass($class)
     {
         $this->class = $class;
+
+        return $this;
     }
 
     /**
@@ -389,8 +392,6 @@ class Definition
      */
     public function setShared($shared)
     {
-        $this->changes['shared'] = true;
-
         $this->shared = (bool) $shared;
 
         return $this;

@@ -40,4 +40,20 @@ class DefinitionTest extends TestCase
         $definition->setProperty('bar', 'baz');
         $this->assertEquals('baz', $definition->getProperty('bar'));
     }
+
+    public function testAutowire()
+    {
+        $definition = new Definition();
+        $this->assertNull($definition->isAutowired());
+        $definition->setAutowired(true);
+        $this->assertTrue($definition->isAutowired());
+    }
+
+    public function testShare()
+    {
+        $definition = new Definition();
+        $this->assertNull($definition->isShared());
+        $definition->setShared(true);
+        $this->assertTrue($definition->isShared());
+    }
 }

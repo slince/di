@@ -52,7 +52,6 @@ class ContainerTest extends TestCase
 
         $container->register(new Director());
         $this->assertTrue($container->has(Director::class));
-
     }
 
     public function testDefine()
@@ -65,7 +64,7 @@ class ContainerTest extends TestCase
         $this->assertEquals(45, $director->getAge());
     }
 
-    public function testSimpleBind()
+    public function testBind()
     {
         $container = new Container();
         $container->register('director', Director::class);
@@ -100,24 +99,9 @@ class ContainerTest extends TestCase
         $container = new Container();
         $container->register(new Director());
         $this->assertTrue($container->has(Director::class));
-
     }
 
-    public function testShare()
-    {
-        $container = new Container();
-        $container->register('director', function () {
-            return new Director('James', 26);
-        })->setShared(true);
-        $this->assertTrue($container->get('director') === $container->get('director'));
-
-        $container->register('director2', function () {
-            return new Director('James', 26);
-        })->setShared(false);
-        $this->assertFalse($container->get('director2') === $container->get('director2'));
-    }
-
-    public function testWithMissingRequiredParameters()
+    public function testGetWithMissingRequiredParameters()
     {
         $container = new Container();
         $container->register('director', function($name, $age){
@@ -138,6 +122,62 @@ class ContainerTest extends TestCase
             'age' => 12
         ]);
         $container->get('director');
+    }
+
+    public function testShare()
+    {
+        $container = new Container();
+        $container->register('director', function () {
+            return new Director('James', 26);
+        })->setShared(true);
+        $this->assertTrue($container->get('director') === $container->get('director'));
+
+        $container->register('director2', function () {
+            return new Director('James', 26);
+        })->setShared(false);
+        $this->assertFalse($container->get('director2') === $container->get('director2'));
+    }
+
+    public function testConfigureShare()
+    {
+        $container = new Container();
+        $container->setDefaults([
+            'share' => false
+        ]);
+        $container->register('director', function () {
+            return new Director('James', 26);
+        });
+        $this->assertFalse($container->get('director') === $container->get('director'));
+    }
+
+    public function testAutowire()
+    {
+        $container = new Container();
+        $container->register(Movie::class)
+            ->setAutowired(false);
+
+        try {
+            $container->get(Movie::class);
+            $this->fail();
+        } catch (\Exception $exception) {
+            $this->assertInstanceOf(DependencyInjectionException::class, $exception);
+        }
+    }
+
+    public function testConfigureAutowire()
+    {
+        $container = new Container();
+        $container->setDefaults([
+            'autowire' => false
+        ]);
+        $container->register(Movie::class);
+
+        try {
+            $container->get(Movie::class);
+            $this->fail();
+        } catch (\Exception $exception) {
+            $this->assertInstanceOf(DependencyInjectionException::class, $exception);
+        }
     }
 
     public function testParameters()
@@ -219,5 +259,22 @@ class ContainerTest extends TestCase
         ]);
         $this->assertEquals('James', $container->get('director')->getName());
         $this->assertEquals(26, $container->get('director')->getAge());
+    }
+
+    public function testAlias()
+    {
+        $container = new Container();
+
+        $container->register('director', function(array $profile){
+            return new Director($profile['name'], $profile['age']);
+        })->setArguments([
+            'profile' => [
+                'name' => 'James',
+                'age' => 45,
+            ]
+        ]);
+        $container->setAlias('director-alias', 'director');
+        $this->assertEquals('director', $container->getAlias('director-alias'));
+        $this->assertSame($container->get('director'), $container->get('director-alias'));
     }
 }

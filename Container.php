@@ -18,6 +18,12 @@ use Interop\Container\ContainerInterface;
 
 class Container implements ContainerInterface
 {
+
+    /**
+     * @var array
+     */
+    protected $aliases = [];
+
     /**
      * Array of singletons
      * @var array
@@ -77,7 +83,10 @@ class Container implements ContainerInterface
             $id = get_class($id);
         }
 
-        $definition = new Definition();
+        //Apply defaults.
+        $definition = (new Definition())
+            ->setShared($this->defaults['share'])
+            ->setAutowired($this->defaults['autowire']);
 
         if (null === $concrete) {
             $definition->setClass($id);
@@ -87,18 +96,15 @@ class Container implements ContainerInterface
             $definition->setFactory($concrete);
         } elseif (is_object($concrete)) {
             $definition->setFactory(function() use ($concrete){
-                return $concrete;
-            })->setClass(get_class($concrete));
+                    return $concrete;
+                })
+                ->setClass(get_class($concrete))
+                ->setShared(true);
         } else {
             throw new ConfigException('expects a valid concrete');
         }
 
         $definition = $this->setDefinition($id, $definition);
-
-        //Apply defaults.
-        $definition
-            ->setShared($this->defaults['share'])
-            ->setAutowired($this->defaults['autowire']);
         return $definition;
     }
 
@@ -117,6 +123,28 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Sets an alias for an existing service.
+     *
+     * @param string $alias
+     * @param string $id
+     */
+    public function setAlias($alias, $id)
+    {
+        $this->aliases[$alias] = $id;
+    }
+
+    /**
+     * Get id of the alias.
+     *
+     * @param string $alias
+     * @return string|null
+     */
+    public function getAlias($alias)
+    {
+        return isset($this->aliases[$alias]) ? $this->aliases[$alias] : null;
+    }
+
+    /**
      * Get a service instance by specified ID
      *
      * @param string $id
@@ -124,6 +152,10 @@ class Container implements ContainerInterface
      */
     public function get($id)
     {
+        if (isset($this->aliases[$id])) {
+            $id = $this->aliases[$id];
+        }
+
         //If service is singleton, return instance directly.
         if (isset($this->services[$id])) {
             return $this->services[$id];

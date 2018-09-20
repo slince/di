@@ -67,7 +67,7 @@ class DefinitionResolver
         if (is_null($constructor)) {
             $instance = $reflection->newInstanceWithoutConstructor();
         } else {
-            $arguments = $this->resolveFunctionArguments($constructor, $definition->getArguments());
+            $arguments = $this->resolveFunctionArguments($definition, $constructor, $definition->getArguments());
             $instance = $reflection->newInstanceArgs($arguments);
         }
         return [$reflection, $instance];
@@ -86,7 +86,7 @@ class DefinitionResolver
                 : new \ReflectionFunction($factory);
 
             if ($reflection->getNumberOfParameters() > 0) {
-                $arguments = $this->resolveFunctionArguments($reflection, $definition->getArguments());
+                $arguments = $this->resolveFunctionArguments($definition, $reflection, $definition->getArguments());
             } else {
                 $arguments = [];
             }
@@ -115,6 +115,7 @@ class DefinitionResolver
                 ));
             }
             $reflectionMethod->invokeArgs($instance, $this->resolveFunctionArguments(
+                $definition,
                 $reflectionMethod,
                 $method[1]
             ));
@@ -143,36 +144,39 @@ class DefinitionResolver
     /**
      * Resolves all arguments for the function or method.
      *
+     * @param Definition $definition
      * @param \ReflectionFunctionAbstract $method
      * @param array $arguments
      * @throws DependencyInjectionException
      * @return array
      */
     public function resolveFunctionArguments(
+        Definition $definition,
         \ReflectionFunctionAbstract $method,
         array $arguments
     ) {
-        $functionArguments = [];
+        $solvedArguments = [];
         $arguments = $this->resolveParameters($arguments);
+        $autowired = $definition->isAutowired(); //autowired
         foreach ($method->getParameters() as $parameter) {
             //If the dependency is provided directly
             if (isset($arguments[$parameter->getPosition()])) {
-                $functionArguments[] = $arguments[$parameter->getPosition()];
+                $solvedArguments[] = $arguments[$parameter->getPosition()];
             } elseif (isset($arguments[$parameter->name])) {
-                $functionArguments[] = $arguments[$parameter->name];
-            } elseif (($dependency = $parameter->getClass()) != null) {
+                $solvedArguments[] = $arguments[$parameter->name];
+            } elseif ($autowired && ($dependency = $parameter->getClass()) != null) {
                 $dependencyName = $dependency->name;
                 try {
-                    $functionArguments[] = $this->container->get($dependencyName);
+                    $solvedArguments[] = $this->container->get($dependencyName);
                 } catch (NotFoundException $exception) {
                     if ($parameter->isOptional()) {
-                        $functionArguments[] = $parameter->getDefaultValue();
+                        $solvedArguments[] = $parameter->getDefaultValue();
                     } else {
                         throw $exception;
                     }
                 }
             } elseif ($parameter->isOptional()) {
-                $functionArguments[] = $parameter->getDefaultValue();
+                $solvedArguments[] = $parameter->getDefaultValue();
             } else {
                 throw new DependencyInjectionException(sprintf(
                     'Missing required parameter "%s" when calling "%s"',
@@ -181,7 +185,7 @@ class DefinitionResolver
                 ));
             }
         }
-        return $functionArguments;
+        return $solvedArguments;
     }
 
     /**

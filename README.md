@@ -16,7 +16,7 @@ Add "slince/di": "^2.0" to the require block in your composer.json and then run 
 ```json
 {
     "require": {
-        "slince/di": "^2.0"
+        "slince/di": "^3.0"
     }
 }
 ```
@@ -29,181 +29,112 @@ composer require slince/di
 
 ## Usage
 
-### Creates a container
-
-Get a instance of container like this:
+Container is dependency injection container. It allows you to implement the dependency injection design pattern meaning that you can decouple your class dependencies and have the container inject them where they are needed.
 
 ```php
+namespace Acme;
+
+class Foo
+{
+   /**
+     * @var \Acme\Bar
+     */
+    public $bar;
+
+    /**
+     * Construct.
+     */
+    public function __construct(Bar $bar)
+    {
+        $this->bar = $bar;
+    }
+}
+
 $container = new Slince\Di\Container();
+
+$container->register(Acme\Foo::class);
+$foo = $container->get(Acme\Foo::class);
+
+var_dump($foo instanceof Acme\Foo);      // true
+var_dump($foo->bar instanceof Acme\Bar); // true
 ```
 
-Assume some classes and interfaces like so: 
+### Alias
 
 ```php
-interface ActorInterface
-{
-}
+$container->register(Acme\Foo::class);
+$container->setAlias('foo-alias', Acme\Foo::class);
+$foo = $container->get('foo-alias');
 
-class Actor implements ActorInterface
-{
-}
+var_dump($foo instanceof Acme\Foo);      // true
+```
 
-class Actress implements ActorInterface
-{
-}
+### Configure container 
 
-class Director
-{
-    protected $name;
-    protected $age;
-    pubic function __construct($name, $age)
-    {
-        $this->name = $name;
-        $this->age = $age;
-    }
-    public static function factory()
-    {
-        return new static();
-    }
-}
-class Movie
-{
-    public $name;
-    protected $director;
-    protected $actor;
-    protected $actress;
+- "singinton"
+
+```php
+$container->setDefaults([
+    'share' => false
+]);
+$container->register('foo', Acme\Foo::class);
+var_dump($container->get('foo') === $container->get('foo'));      // false
+```
+
+- "autowire"
+
+```php
+$container->setDefaults([
+    'autowire' => false,
+]);
+$container->register('foo', Acme\Foo::class)
+    ->addArgument(new Bar());  // You have to provide $bar
     
-    public function __construct(Director $director, ActorInterface $actor)
+var_dump($container->get('foo') instanceof Acme\Foo::class);  // true
+```
+
+### Global Parameters
+
+```php
+class Acme;
+
+class Bar
+{
+    protected $foo;
+    protected $baz;
+    
+    public function __construct($foo, $baz)
     {
-        $this->director = $director;
-        $this->actor = $actor;
+        $this->foo = $foo;
+        $this->baz = $baz;
     }
     
-    public function setActress(Actress $actress)
+    public function getFoo()
     {
-        $this->actress = $actress;
+        return $this->foo;
+    }
+    public function getBaz()
+    {
+        return $this->baz;
     }
 }
 
-```
-### Injections
-
-The package provides the following ways to define injections
-
-#### Bind an instance
-
-```php
-$director = new Director();
-$container->instance('director', $director);
-var_dump($container->get('director') === $director); //true
-
-// You can also register it directly without given service name
-$container->instance(new Director());
-$container->get(Director::class); //Get it by class name
-```
-Container will share the instance, because the container thinks it's a singleton.
-
-#### Bind a callable function
-
-```php
-$container->call('director', function(){
-    return new Director();
-});
-var_dump($container->get('director') instanceof Director::class); //true
-```
-You should provide a valid callable function. It's useful to register a service with factory method.
-
-```php
-$container->call('director', [Director::class, 'factory']);
-var_dump($container->get('director') instanceof Director::class); //true
-```
-
-#### Registers a class definition(Constructor injection, Setter injection,Property injection)
-
-Some times, the dependencies of service are not classes. In this case, you need to provide the container with the parameters 
-for the instantiation of the service class.
-
-```php
-$container->define('director', Director::class)
-    ->setArguments(['name'=>'James', 'age'=>26]);
-```
-It's also allowed that use argument position.
-
-```php
-$container->define('director', Director::class)
-    ->setArguments([0=>'James', 1=>26]);
-```
-> You can omit the class dependencies.
-
-
-If the current service class depends on a defined service. You can define it like so.
-
-```php
-$container->define('movie', Movie::class)->setArguments(['actor'=> new Slince\Di\Reference('actor')]);
-```
-
-Setter injection,Property injection.
-
-```php
-$container->define('movie', Movie::class)
-    ->setMethodCalls(['setActress' => []])
-    ->setProperties(['name' => 'foo']);
-```
-> Since both the Movie `constructor` and the `setActress` depend on the object, the actual arguments are omitted here.
-
-
-#### Interface/Abstract class injection
-
-```php
-$container->bind(ActorInterface::class, Actor::class):
-$container->get(ActorInterface::class); //will get a instance of "Actor::class"
-```
-
-If the interface has more than one implementations and you want to instantiate different implementation classes when dealing with 
-dependencies of different classes; Just provide "BindingContext" for method `bind`
-
-```php
-$container->bind(ActorInterface::class, Actor::class, Movie::class):
-$container->bind(ActorInterface::class, Actress::class, OtherClass::class):
-```
-
-Set different implementation classes in different methods of the same class:
-
-```php
-$container->bind(ActorInterface::class, Actor::class, [Movie::class, '__construct']):
-$container->bind(ActorInterface::class, Actress::class, [Movie::class, 'setActress']):
-```
-
-#### Singleton
-
-```php
-$container->define('director', Director::class);
-$container->share('director');
-```
-
-#### Global Parameters
-
-```php
 $container->setParameters([
-    'directorName' => 'James',
-    'director' => [
-        'age' => 26
+    'foo' => 'hello',
+    'bar' => [
+        'baz' => 'world'
     ]
 ]);
 
-//When you get the service
-$container->get(Director::class, [
-    'name' => '%directorName%',
-    'age' => '%director.age%' //Support dot access to deep data
-]);
-
-//when you register a class definition
-$container->define('director', Director::class)
+$container->register('bar', Acme\Bar::class)
      ->setArguments([
-        'name' => '%directorName%',
-        'age' => '%director.age%'
+        'foo' => '%foo%',
+        'baz' => '%bar.baz%'
     ]);
-$container->get('director');
+
+$bar = $container->get('bar');
+var_dump($bar->getFoo());  // hello
+var_dump($bar->getBaz()); //world
 ```
 
 ## License
