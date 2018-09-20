@@ -93,10 +93,10 @@ $container->register('foo', Acme\Foo::class)
 var_dump($container->get('foo') instanceof Acme\Foo::class);  // true
 ```
 
-### Global Parameters
+### Container Parameters
 
 ```php
-class Acme;
+namespace Acme;
 
 class Bar
 {
