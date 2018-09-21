@@ -85,8 +85,8 @@ var_dump($container->get('bar') === $container->get('foo')->bar));    // true
 
 ### Use a Factory to Create Services
 
-Suppose you have a factory that configures and returns a new NewsletterManager object 
-by calling the static createNewsletterManager() method:
+Suppose you have a factory that configures and returns a new `NewsletterManager` object 
+by calling the static `createNewsletterManager()` method:
 
 ```php
 class NewsletterManagerStaticFactory
