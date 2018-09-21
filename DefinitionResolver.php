@@ -81,9 +81,12 @@ class DefinitionResolver
     {
         $factory = $definition->getFactory();
         try {
-            $reflection = is_array($factory)
-                ? new \ReflectionMethod($factory[0], $factory[1])
-                : new \ReflectionFunction($factory);
+            if (is_array($factory)) {
+                $factory = $this->resolveParameters($factory);
+                $reflection = new \ReflectionMethod($factory[0], $factory[1]);
+            } else {
+                $reflection = new \ReflectionFunction($factory);
+            }
 
             if ($reflection->getNumberOfParameters() > 0) {
                 $arguments = $this->resolveFunctionArguments($definition, $reflection, $definition->getArguments());
@@ -93,7 +96,7 @@ class DefinitionResolver
             return call_user_func_array($factory, $arguments);
 
         } catch (\ReflectionException $exception) {
-            throw new ConfigException('The factory is invalid.');
+            throw new DependencyInjectionException('The factory is invalid.');
         }
     }
 
@@ -128,16 +131,9 @@ class DefinitionResolver
      */
     protected function invokeProperties(Definition $definition, $instance)
     {
-        foreach ($definition->getProperties() as $propertyName => $propertyValue) {
-            if (property_exists($instance, $propertyName)) {
-                $instance->$propertyName = $propertyValue;
-            } else {
-                throw new DependencyInjectionException(sprintf(
-                    "Class '%s' has no property '%s'",
-                    $definition->getClass(),
-                    $propertyName
-                ));
-            }
+        $properties = $this->resolveParameters($definition->getProperties());
+        foreach ($properties as $name => $value) {
+            $instance->$name = $value;
         }
     }
 

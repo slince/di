@@ -52,8 +52,8 @@ class Director
         return new Movie($this, $movieName, date('Y-m-d'));
     }
 
-    public static function factory()
+    public static function factory($name, $age)
     {
-        return new Director();
+        return new Director($name, $age);
     }
 }

@@ -71,7 +71,57 @@ var_dump($foo instanceof Acme\Foo);      // true
 var_dump($foo->bar instanceof Acme\Bar); // true
 ```
 
-### Alias
+### Make Service References
+
+```php
+$container->register('bar', Acme\Bar::class);
+$container->register('foo', Acme\Foo::class)
+    ->addArgument(new Slince\Di\Reference('bar')); //refer to 'bar'
+    // You can also use like following:
+    // ->addArgument('@bar'); 
+    
+var_dump($container->get('bar') === $container->get('foo')->bar));    // true
+```
+
+### Use a Factory to Create Services
+
+Suppose you have a factory that configures and returns a new NewsletterManager object 
+by calling the static createNewsletterManager() method:
+
+```php
+class NewsletterManagerStaticFactory
+{
+    public static function createNewsletterManager($parameter)
+    {
+        $newsletterManager = new NewsletterManager($parameter);
+
+        // ...
+
+        return $newsletterManager;
+    }
+}
+```
+
+```php
+// call the static method
+$container->register(
+    NewsletterManager::class, 
+    array(NewsletterManagerStaticFactory::class, 'createNewsletterManager')
+)->addArgument('foo');
+
+```
+If your factory is not using a static function to configure and create your service, but a regular method, 
+you can instantiate the factory itself as a service too. 
+
+```php
+// call a method on the specified factory service
+$container->register(NewsletterManager::class, [
+    new Reference(NewsletterManagerFactory::class), // or use '@'
+    'createNewsletterManager'
+]);
+```
+
+### Create Service Aliases
 
 ```php
 $container->register(Acme\Foo::class);
@@ -93,7 +143,7 @@ $container->register('foo', Acme\Foo::class);
 var_dump($container->get('foo') === $container->get('foo'));      // false
 ```
 
-- Autowire
+- Autowiring
 
 ```php
 $container->setDefaults([
@@ -103,17 +153,6 @@ $container->register('foo', Acme\Foo::class)
     ->addArgument(new Acme\Bar());  // You have to provide $bar
     
 var_dump($container->get('foo') instanceof Acme\Foo::class);  // true
-```
-### Reference
-
-```php
-$container->register('bar', Acme\Bar::class);
-$container->register('foo', Acme\Foo::class)
-    ->addArgument(new Slince\Di\Reference('bar')); //refer to 'bar'
-    // You can also use like following:
-    // ->addArgument('@bar'); 
-    
-var_dump($container->get('bar') === $container->get('foo')->bar));    // true
 ```
 
 ### Container Parameters
@@ -137,7 +176,7 @@ var_dump($bar->foo);  // hello
 var_dump($bar->bar); // world
 ```
 
-### Definition tag
+### Work with Service Tags
 
 ```php
 $container->register('foo')->addTag('my.tag', array('hello' => 'world'));

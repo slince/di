@@ -56,8 +56,7 @@ class DefinitionResolverTest extends TestCase
             'gender' => 'male'
         ]);
         $this->assertEquals('male', $resolver->resolve($definition)->gender);
-        $definition->setProperty('no-exist-property', 'foo');
-        $this->expectException(DependencyInjectionException::class);
-        $resolver->resolve($definition);
+        $definition->setProperty('no_exist_property', 'foo');
+        $this->assertEquals('foo', $resolver->resolve($definition)->no_exist_property);
     }
 }
