@@ -12,7 +12,6 @@
 namespace Slince\Di;
 
 use Slince\Di\Exception\ConfigException;
-use Slince\Di\Exception\DependencyInjectionException;
 use Slince\Di\Exception\NotFoundException;
 use Interop\Container\ContainerInterface;
 

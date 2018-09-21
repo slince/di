@@ -222,7 +222,7 @@ class DefinitionResolver
                 return $this->container->get(substr($value, 1));
             }
             //"fool%bar%baz"
-            return preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
+            return preg_replace_callback("#%([^%\s]+)%#", function($matches) {
                 $key = $matches[1];
                 if ($parameter = $this->container->getParameter($key)) {
                     return $parameter;
