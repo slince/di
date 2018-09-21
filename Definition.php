@@ -222,7 +222,7 @@ class Definition
     {
         $this->calls[] = [
             $method,
-            (array)$arguments
+            (array) $arguments
         ];
         return $this;
     }
