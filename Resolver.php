@@ -59,7 +59,7 @@ class Resolver
         $concrete = $definition->getConcrete();
         if (is_string($concrete)) {
             $definition->setClass($concrete);
-        } elseif (is_callable($concrete)) {
+        } elseif (is_array($concrete) || $concrete instanceof \Closure) {
             $definition->setFactory($concrete);
         } elseif (is_object($concrete)) {
             $definition->setResolved($concrete)
@@ -73,7 +73,7 @@ class Resolver
     {
         $class = $definition->getClass();
         if ($class === null) {
-            throw new DependencyInjectionException('You must set a class or factory for definition.');
+            throw new ConfigException('You must set a class or factory for definition.');
         }
         try {
             $reflection = new \ReflectionClass($definition->getClass());
@@ -109,7 +109,9 @@ class Resolver
         if (is_array($factory)) {
             $factory = $this->resolveArguments($factory);
         }
-        return call_user_func_array($factory, $this->resolveArguments($definition->getArguments()));
+        return call_user_func_array($factory,
+            $this->resolveArguments($definition->getArguments()) ?: [$this->container]
+        );
     }
 
     /**

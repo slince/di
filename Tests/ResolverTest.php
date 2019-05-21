@@ -37,16 +37,6 @@ class ResolverTest extends TestCase
         $resolver->resolve($definition);
     }
 
-    public function testResolveWithNotExistMethod()
-    {
-        $container = new Container();
-        $resolver =  new Resolver($container);
-        $definition = new Definition(Director::class);
-        $definition->addMethodCall('not_exists_method', 'foo');
-        $this->expectException(DependencyInjectionException::class);
-        $resolver->resolve($definition);
-    }
-
     public function testResolveWithProperty()
     {
         $container = new Container();

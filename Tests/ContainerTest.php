@@ -3,10 +3,12 @@ namespace Slince\Di\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Slince\Di\Container;
+use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\DependencyInjectionException;
 use Slince\Di\Reference;
 use Slince\Di\Tests\TestClass\Actor;
 use Slince\Di\Tests\TestClass\ActorInterface;
+use Slince\Di\Tests\TestClass\Bar;
 use Slince\Di\Tests\TestClass\Director;
 use Slince\Di\Tests\TestClass\Foo;
 use Slince\Di\Tests\TestClass\Movie;
@@ -26,43 +28,40 @@ class ContainerTest extends TestCase
     {
         $container = new Container();
         $container->register('director', [Director::class, 'factory'])
-            ->setArguments(['age' => 26, 'name' => 'James']);
+            ->setArguments(['James', 18]);
 
         $director = $container->get('director');
         $this->assertInstanceOf(Director::class, $director);
         $this->assertEquals('James', $director->getName());
-        $this->assertEquals(26, $director->getAge());
+        $this->assertEquals(18, $director->getAge());
 
         // ['@service', 'factory']
         $container->register('foo', Foo::class);
         $container->register('director2', ['@foo', 'createDirector'])
-            ->setArguments([1 => 26, 0 => 'James']);
+            ->setArguments(['James', 18]);
 
         $director2 = $container->get('director2');
         $this->assertEquals('James', $director2->getName());
-        $this->assertEquals(26, $director2->getAge());
+        $this->assertEquals(18, $director2->getAge());
 
         $container->register('director2', ['@foo', 'createDirector'])
-            ->setArguments([1 => 26, 0 => 'James']);
+            ->setArguments([1 => 18, 0 => 'James']);
 
-        // [new Reference('service'), 'factory']
-        $container->register('director2', [new Reference('foo'), 'createDirector'])
-            ->setArguments([1 => 26, 0 => 'James']);
         $director2 = $container->get('director2');
         $this->assertEquals('James', $director2->getName());
-        $this->assertEquals(26, $director2->getAge());
+        $this->assertEquals(18, $director2->getAge());
     }
 
     public function testFactoryWithParameters()
     {
         $container = new Container();
         $container->register('director', function ($age, $name) {
-            return new Director($name, $age);
-        })
-        ->setArguments(['name' => 'James', 'age' => 26]);
+                return new Director($name, $age);
+            })
+            ->setArguments([1 => 18, 0 => 'James']);
         $director = $container->get('director');
         $this->assertEquals('James', $director->getName());
-        $this->assertEquals(26, $director->getAge());
+        $this->assertEquals(18, $director->getAge());
     }
 
     public function testInstance()
@@ -143,7 +142,7 @@ class ContainerTest extends TestCase
     {
         $container = new Container();
         $this->assertFalse($container->has('not_exists_class'));
-        $this->assertTrue($container->has(Director::class));
+        $this->assertFalse($container->has(Director::class));
 
         $container->register(new Director());
         $container->get(Director::class);
@@ -160,11 +159,9 @@ class ContainerTest extends TestCase
     public function testGetWithMissingRequiredParameters()
     {
         $container = new Container();
-        $container->register('director', function($name, $age){
-            return new Director($name, $age);
-        });
+        $container->register('bar', Bar::class);
         $this->expectException(DependencyInjectionException::class);
-        $container->get('director');
+        $container->get('bar');
     }
 
     public function testGetWithMissingOptionalClassDependency()
@@ -228,7 +225,7 @@ class ContainerTest extends TestCase
             $container->get(Movie::class);
             $this->fail();
         } catch (\Exception $exception) {
-            $this->assertInstanceOf(DependencyInjectionException::class, $exception);
+            $this->assertInstanceOf(ConfigException::class, $exception);
         }
 
         $container->register(Movie::class)
@@ -252,7 +249,7 @@ class ContainerTest extends TestCase
             $container->get(Movie::class);
             $this->fail();
         } catch (\Exception $exception) {
-            $this->assertInstanceOf(DependencyInjectionException::class, $exception);
+            $this->assertInstanceOf(ConfigException::class, $exception);
         }
     }
 
