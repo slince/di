@@ -24,6 +24,9 @@ class ContainerTest extends TestCase
         $container['foo'] = Foo::class;
         $this->assertTrue(isset($container['foo']));
         $this->assertInstanceOf(Foo::class, $container['foo']);
+
+        unset($container['foo']);
+        $this->assertFalse(isset($container['foo']));
     }
 
     public function testFactory()
@@ -192,6 +195,27 @@ class ContainerTest extends TestCase
         ]);
         $container->get('director');
     }
+
+    public function testGetNonExistsService()
+    {
+        $container = new Container();
+        $this->expectException(NotFoundException::class);
+        $container->get('a_non_exists_id');
+    }
+
+    public function testGetDefaults()
+    {
+        $container = new Container();
+        $this->assertTrue($container->getDefault('autowire'));
+        $this->assertTrue($container->getDefault('share'));
+        $container->setDefaults([
+            'autowire' => false,
+            'share' => false
+        ]);
+        $this->assertFalse($container->getDefault('autowire'));
+        $this->assertFalse($container->getDefault('share'));
+    }
+
 
     public function testProperties()
     {
