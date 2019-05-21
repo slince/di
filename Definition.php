@@ -14,6 +14,11 @@ namespace Slince\Di;
 class Definition
 {
     /**
+     * @var mixed
+     */
+    protected $concrete;
+
+    /**
      * @var string
      */
     protected $class;
@@ -60,16 +65,33 @@ class Definition
     protected $shared;
 
     /**
-     * @var boolean
+     * @var object
      */
-    protected $public;
+    protected $resolved;
 
-    public function __construct(
-        $class = null,
-        array $arguments = []
-    ) {
-        $this->class = $class;
-        $this->arguments = $arguments;
+    public function __construct($concrete)
+    {
+        $this->concrete= $concrete;
+    }
+
+    /**
+     * Set the concrete of the definition.
+     *
+     * @param mixed $concrete
+     */
+    public function setConcrete($concrete)
+    {
+        $this->concrete = $concrete;
+    }
+
+    /**
+     * Get the concrete of the definition.
+     *
+     * @return mixed
+     */
+    public function getConcrete()
+    {
+        return $this->concrete;
     }
 
     /**
@@ -405,5 +427,27 @@ class Definition
     public function isShared()
     {
         return $this->shared;
+    }
+
+    /**
+     * Get resolved instance of the definition.
+     *
+     * @return object
+     */
+    public function getResolved()
+    {
+        return $this->resolved;
+    }
+
+    /**
+     * Set the resolved instance for the definition.
+     *
+     * @param object $resolved
+     * @return $this
+     */
+    public function setResolved($resolved)
+    {
+        $this->resolved = $resolved;
+        return $this;
     }
 }

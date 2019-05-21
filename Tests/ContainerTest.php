@@ -188,7 +188,7 @@ class ContainerTest extends TestCase
 
         $this->assertSame($container->get('director'), $container->get('foo1')->director);
 
-        $container->register('foo2',Foo::class)->setProperty('director', new Reference('director'));
+        $container->register('foo2',Foo::class)->setProperty('director', '@director');
         $this->assertSame($container->get('director'), $container->get('foo2')->director);
     }
 
@@ -263,7 +263,7 @@ class ContainerTest extends TestCase
         $container->register('actor',Actor::class);
         $container->register(Movie::class)
             ->addArgument('@director')
-            ->addArgument(new Reference('actor'));
+            ->addArgument('@actor');
 
         $movie = $container->get(Movie::class);
         $this->assertInstanceOf(Movie::class, $movie);

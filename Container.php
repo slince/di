@@ -11,23 +11,15 @@
 
 namespace Slince\Di;
 
-use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\NotFoundException;
 use Interop\Container\ContainerInterface;
 
 class Container implements ContainerInterface
 {
-
     /**
      * @var array
      */
     protected $aliases = [];
-
-    /**
-     * Array of singletons
-     * @var array
-     */
-    protected $services = [];
 
     /**
      * Array of Definitions
@@ -37,15 +29,20 @@ class Container implements ContainerInterface
     protected $definitions = [];
 
     /**
+     * @var array
+     */
+    protected $instances;
+
+    /**
      * Array of parameters
      * @var ParameterBag
      */
     protected $parameters;
 
     /**
-     * @var DefinitionResolver
+     * @var Resolver
      */
-    protected $definitionResolver;
+    protected $resolver;
 
     /**
      * Defaults for the container.
@@ -64,44 +61,29 @@ class Container implements ContainerInterface
     public function __construct()
     {
         $this->parameters = new ParameterBag();
-        $this->definitionResolver = new DefinitionResolver($this);
+        $this->resolver = new Resolver($this);
         $this->register($this);
     }
 
     /**
      * Register a definition.
      *
-     * @param string $id
+     * @param string|object $id
      * @param mixed $concrete
      * @return Definition
      */
     public function register($id, $concrete = null)
     {
-        if (is_object($id)) {
+        if (null === $concrete) {
             $concrete = $id;
+        }
+        if (is_object($id)) {
             $id = get_class($id);
         }
-
         //Apply defaults.
-        $definition = (new Definition())
+        $definition = (new Definition($concrete))
             ->setShared($this->defaults['share'])
             ->setAutowired($this->defaults['autowire']);
-
-        if (null === $concrete) {
-            $definition->setClass($id);
-        } elseif (is_string($concrete)) {
-            $definition->setClass($concrete);
-        } elseif ($concrete instanceof \Closure || is_array($concrete)) {
-            $definition->setFactory($concrete);
-        } elseif (is_object($concrete)) {
-            $definition->setFactory(function() use ($concrete){
-                    return $concrete;
-                })
-                ->setClass(get_class($concrete))
-                ->setShared(true);
-        } else {
-            throw new ConfigException('expects a valid concrete');
-        }
 
         $definition = $this->setDefinition($id, $definition);
         return $definition;
@@ -154,27 +136,21 @@ class Container implements ContainerInterface
         if (isset($this->aliases[$id])) {
             $id = $this->aliases[$id];
         }
-
-        //If service is singleton, return instance directly.
-        if (isset($this->services[$id])) {
-            return $this->services[$id];
+        if (isset($this->instances[$id])) {
+            return $this->instances[$id];
         }
 
-        //If there is no matching definition, creates an definition automatically
-        if (!isset($this->definitions[$id])) {
-            if (class_exists($id)) {
-                $this->register($id);
-            } else {
-                throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
-            }
+        //If there is no matching definition, creates a definition.
+        if (!$this->has($id) && class_exists($id)) {
+            $this->register($id);
         }
-
+        if (!$this->has($id)) {
+            throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
+        }
         // resolve instance.
-        $instance = $this->definitionResolver->resolve($this->definitions[$id]);
-
-        //If the service be set as singleton mode, stores its instance
+        $instance = $this->resolver->resolve($this->definitions[$id]);
         if ($this->definitions[$id]->isShared()) {
-            $this->services[$id] = $instance;
+            $this->instances[$id] = $instance;
         }
         return $instance;
     }
@@ -184,12 +160,6 @@ class Container implements ContainerInterface
      */
     public function has($id)
     {
-        if (isset($this->services[$id])) {
-            return true;
-        }
-        if (!isset($this->definitions[$id]) && class_exists($id)) {
-            $this->register($id);
-        }
         return isset($this->definitions[$id]);
     }
 

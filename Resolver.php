@@ -15,7 +15,7 @@ use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\DependencyInjectionException;
 use Slince\Di\Exception\NotFoundException;
 
-class DefinitionResolver
+class Resolver
 {
     /**
      * @var Container
@@ -36,17 +36,37 @@ class DefinitionResolver
      */
     public function resolve(Definition $definition)
     {
+        $this->parseConcrete($definition);
+
         if (null !== $definition->getFactory()) {
             $instance = $this->createFromFactory($definition);
-            $reflection = new \ReflectionObject($instance);
+        } elseif (null !== $definition->getClass()) {
+            $instance = $this->createFromClass($definition);
+        } elseif (null !== $definition->getResolved()) {
+            $instance = $definition->getResolved();
         } else {
-            list($reflection, $instance) = $this->createFromClass($definition);
+            throw new ConfigException('The definition is not invalid.');
         }
-
-        $this->invokeMethods($definition, $instance, $reflection);
+        $this->invokeMethods($definition, $instance);
         $this->invokeProperties($definition, $instance);
+        $definition->setResolved($instance);
 
         return $instance;
+    }
+
+    protected function parseConcrete(Definition $definition)
+    {
+        $concrete = $definition->getConcrete();
+        if (is_string($concrete)) {
+            $definition->setClass($concrete);
+        } elseif (is_callable($concrete)) {
+            $definition->setFactory($concrete);
+        } elseif (is_object($concrete)) {
+            $definition->setResolved($concrete)
+                ->setShared(true);
+        } else {
+            throw new ConfigException('The concrete of the definition is invalid');
+        }
     }
 
     protected function createFromClass(Definition $definition)
@@ -67,10 +87,16 @@ class DefinitionResolver
         if (is_null($constructor)) {
             $instance = $reflection->newInstanceWithoutConstructor();
         } else {
-            $arguments = $this->resolveFunctionArguments($definition, $constructor, $definition->getArguments());
+            $arguments = $this->resolveArguments($definition->getArguments());
+            if ($definition->isAutowired()) {
+                $arguments = $this->resolveReflectionArguments($constructor, $arguments);
+            }
+            if (count($arguments) < $constructor->getNumberOfRequiredParameters()) {
+                throw new ConfigException(sprintf('Too few arguments for class "%s"', $class));
+            }
             $instance = $reflection->newInstanceArgs($arguments);
         }
-        return [$reflection, $instance];
+        return $instance;
     }
 
     /**
@@ -80,48 +106,20 @@ class DefinitionResolver
     protected function createFromFactory(Definition $definition)
     {
         $factory = $definition->getFactory();
-        try {
-            if (is_array($factory)) {
-                $factory = $this->resolveParameters($factory);
-                $reflection = new \ReflectionMethod($factory[0], $factory[1]);
-            } else {
-                $reflection = new \ReflectionFunction($factory);
-            }
-
-            if ($reflection->getNumberOfParameters() > 0) {
-                $arguments = $this->resolveFunctionArguments($definition, $reflection, $definition->getArguments());
-            } else {
-                $arguments = [];
-            }
-            return call_user_func_array($factory, $arguments);
-
-        } catch (\ReflectionException $exception) {
-            throw new DependencyInjectionException('The factory is invalid.');
+        if (is_array($factory)) {
+            $factory = $this->resolveArguments($factory);
         }
+        return call_user_func_array($factory, $this->resolveArguments($definition->getArguments()));
     }
 
     /**
      * @param Definition $definition
      * @param object $instance
-     * @param \ReflectionClass $reflection
      */
-    protected function invokeMethods(Definition $definition, $instance, \ReflectionClass $reflection)
+    protected function invokeMethods(Definition $definition, $instance)
     {
         foreach ($definition->getMethodCalls() as $method) {
-            try {
-                $reflectionMethod = $reflection->getMethod($method[0]);
-            } catch (\ReflectionException $e) {
-                throw new DependencyInjectionException(sprintf(
-                    'Class "%s" has no method "%s"',
-                    $definition->getClass(),
-                    $method[0]
-                ));
-            }
-            $reflectionMethod->invokeArgs($instance, $this->resolveFunctionArguments(
-                $definition,
-                $reflectionMethod,
-                $method[1]
-            ));
+            call_user_func_array([$instance, $method[0]], $this->resolveArguments($method[1]));
         }
     }
 
@@ -131,7 +129,7 @@ class DefinitionResolver
      */
     protected function invokeProperties(Definition $definition, $instance)
     {
-        $properties = $this->resolveParameters($definition->getProperties());
+        $properties = $this->resolveArguments($definition->getProperties());
         foreach ($properties as $name => $value) {
             $instance->$name = $value;
         }
@@ -140,27 +138,23 @@ class DefinitionResolver
     /**
      * Resolves all arguments for the function or method.
      *
-     * @param Definition $definition
      * @param \ReflectionFunctionAbstract $method
      * @param array $arguments
-     * @throws DependencyInjectionException
+     * @throws
      * @return array
      */
-    public function resolveFunctionArguments(
-        Definition $definition,
+    public function resolveReflectionArguments(
         \ReflectionFunctionAbstract $method,
         array $arguments
     ) {
         $solvedArguments = [];
-        $arguments = $this->resolveParameters($arguments);
-        $autowired = $definition->isAutowired(); //autowired
         foreach ($method->getParameters() as $parameter) {
             //If the dependency is provided directly
             if (isset($arguments[$parameter->getPosition()])) {
                 $solvedArguments[] = $arguments[$parameter->getPosition()];
             } elseif (isset($arguments[$parameter->name])) {
                 $solvedArguments[] = $arguments[$parameter->name];
-            } elseif ($autowired && ($dependency = $parameter->getClass()) != null) {
+            } elseif (($dependency = $parameter->getClass()) != null) {
                 $dependencyName = $dependency->name;
                 try {
                     $solvedArguments[] = $this->container->get($dependencyName);
@@ -186,33 +180,29 @@ class DefinitionResolver
 
     /**
      * Resolves array of parameters
-     * @param array $parameters
+     * @param array $arguments
      * @return array
      */
-    protected function resolveParameters($parameters)
+    protected function resolveArguments($arguments)
     {
-        return array_map(function($parameter) {
-            if (is_array($parameter)) {
-                return $this->resolveParameters($parameter);
+        return array_map(function($argument) {
+            if (is_array($argument)) {
+                return $this->resolveArguments($argument);
             } else {
-                return $this->resolveParameter($parameter);
+                return $this->formatArgument($argument);
             }
-        }, $parameters);
+        }, $arguments);
     }
 
     /**
-     * Formats parameter value
+     * Formats argument value
      *
-     * @param string|Reference $value
+     * @param string $value
      * @return string
      * @throws DependencyInjectionException
      */
-    protected function resolveParameter($value)
+    protected function formatArgument($value)
     {
-        //Reference
-        if ($value instanceof Reference) {
-            return $this->container->get($value->getId());
-        }
         if (is_string($value) && ($len = strlen($value)) > 0) {
             if ($len >= 2 && '@' === $value[0]) {
                 return $this->container->get(substr($value, 1));

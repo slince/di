@@ -3,18 +3,18 @@ namespace Slince\Di\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Slince\Di\Definition;
-use Slince\Di\DefinitionResolver;
+use Slince\Di\Resolver;
 use Slince\Di\Container;
 use Slince\Di\Exception\DependencyInjectionException;
 use Slince\Di\Tests\TestClass\ActorInterface;
 use Slince\Di\Tests\TestClass\Director;
 
-class DefinitionResolverTest extends TestCase
+class ResolverTest extends TestCase
 {
     public function testResolve()
     {
         $container = new Container();
-        $resolver =  new DefinitionResolver($container);
+        $resolver =  new Resolver($container);
         $definition = new Definition(Director::class);
         $this->assertInstanceOf(Director::class, $resolver->resolve($definition));
     }
@@ -22,7 +22,7 @@ class DefinitionResolverTest extends TestCase
     public function testResolveInvalidClass()
     {
         $container = new Container();
-        $resolver =  new DefinitionResolver($container);
+        $resolver =  new Resolver($container);
         $definition = new Definition('invalid-class');
         $this->expectException(DependencyInjectionException::class);
         $resolver->resolve($definition);
@@ -31,7 +31,7 @@ class DefinitionResolverTest extends TestCase
     public function testResolveNotInstantiateClass()
     {
         $container = new Container();
-        $resolver =  new DefinitionResolver($container);
+        $resolver =  new Resolver($container);
         $definition = new Definition(ActorInterface::class);
         $this->expectException(DependencyInjectionException::class);
         $resolver->resolve($definition);
@@ -40,7 +40,7 @@ class DefinitionResolverTest extends TestCase
     public function testResolveWithNotExistMethod()
     {
         $container = new Container();
-        $resolver =  new DefinitionResolver($container);
+        $resolver =  new Resolver($container);
         $definition = new Definition(Director::class);
         $definition->addMethodCall('not_exists_method', 'foo');
         $this->expectException(DependencyInjectionException::class);
@@ -50,7 +50,7 @@ class DefinitionResolverTest extends TestCase
     public function testResolveWithProperty()
     {
         $container = new Container();
-        $resolver =  new DefinitionResolver($container);
+        $resolver =  new Resolver($container);
         $definition = new Definition(Director::class);
         $definition->setProperties([
             'gender' => 'male'
