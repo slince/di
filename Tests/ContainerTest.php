@@ -7,6 +7,7 @@ use Slince\Di\Container;
 use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\DependencyInjectionException;
 use Slince\Di\Exception\NotFoundException;
+use Slince\Di\Reference;
 use Slince\Di\Tests\TestClass\Actor;
 use Slince\Di\Tests\TestClass\ActorInterface;
 use Slince\Di\Tests\TestClass\Bar;
@@ -55,6 +56,10 @@ class ContainerTest extends TestCase
         $this->assertEquals(18, $director2->getAge());
 
         $container->register('director2', ['@foo', 'createDirector'])
+            ->setArguments([1 => 18, 0 => 'James']);
+
+        // [new Reference('service'), 'factory']
+        $container->register('director2', [new Reference('foo'), 'createDirector'])
             ->setArguments([1 => 18, 0 => 'James']);
 
         $director2 = $container->get('director2');
@@ -196,7 +201,7 @@ class ContainerTest extends TestCase
 
         $this->assertSame($container->get('director'), $container->get('foo1')->director);
 
-        $container->register('foo2', Foo::class)->setProperty('director', '@director');
+        $container->register('foo2',Foo::class)->setProperty('director', new Reference('director'));
         $this->assertSame($container->get('director'), $container->get('foo2')->director);
     }
 
@@ -271,7 +276,7 @@ class ContainerTest extends TestCase
         $container->register('actor', Actor::class);
         $container->register(Movie::class)
             ->addArgument('@director')
-            ->addArgument('@actor');
+            ->addArgument(new Reference('actor'));
 
         $movie = $container->get(Movie::class);
         $this->assertInstanceOf(Movie::class, $movie);

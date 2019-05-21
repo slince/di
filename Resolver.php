@@ -216,6 +216,10 @@ class Resolver
      */
     protected function formatArgument($value)
     {
+        if ($value instanceof Reference) {
+            return $this->container->get($value->getId());
+        }
+
         if (is_string($value) && ($len = strlen($value)) > 0) {
             if ($len >= 2 && '@' === $value[0]) {
                 return $this->container->get(substr($value, 1));
