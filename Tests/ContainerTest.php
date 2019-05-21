@@ -1,11 +1,12 @@
 <?php
+
 namespace Slince\Di\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Slince\Di\Container;
 use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\DependencyInjectionException;
-use Slince\Di\Reference;
+use Slince\Di\Exception\NotFoundException;
 use Slince\Di\Tests\TestClass\Actor;
 use Slince\Di\Tests\TestClass\ActorInterface;
 use Slince\Di\Tests\TestClass\Bar;
@@ -15,6 +16,15 @@ use Slince\Di\Tests\TestClass\Movie;
 
 class ContainerTest extends TestCase
 {
+    public function testArrayAccess()
+    {
+        $container = new Container();
+        $this->assertFalse($container->has('foo'));
+        $container['foo'] = Foo::class;
+        $this->assertTrue(isset($container['foo']));
+        $this->assertInstanceOf(Foo::class, $container['foo']);
+    }
+
     public function testFactory()
     {
         $container = new Container();
@@ -56,8 +66,8 @@ class ContainerTest extends TestCase
     {
         $container = new Container();
         $container->register('director', function ($age, $name) {
-                return new Director($name, $age);
-            })
+            return new Director($name, $age);
+        })
             ->setArguments([1 => 18, 0 => 'James']);
         $director = $container->get('director');
         $this->assertEquals('James', $director->getName());
@@ -78,11 +88,11 @@ class ContainerTest extends TestCase
         $this->assertTrue($container->has(Director::class));
     }
 
-    public function testDefine()
+    public function testRegister()
     {
         $container = new Container();
         $container->register('director', Director::class)
-            ->setArguments( [0 => 'Bob', 1 => 45]);
+            ->setArguments([0 => 'Bob', 1 => 45]);
         $this->assertInstanceOf(Director::class, $director = $container->get('director'));
         $this->assertEquals('Bob', $director->getName());
         $this->assertEquals(45, $director->getAge());
@@ -110,7 +120,7 @@ class ContainerTest extends TestCase
     public function testRegisterWithNumericArguments()
     {
         $container = new Container();
-        $container->register('director', function($name, $age){
+        $container->register('director', function ($name, $age) {
             return new Director($name, $age);
         })->addArgument('foo')
             ->addArgument('bar');
@@ -127,7 +137,7 @@ class ContainerTest extends TestCase
         $director = $container->get(Director::class);
         $this->assertEquals(20, $director->getAge());
 
-        $container->register('director2',Director::class)
+        $container->register('director2', Director::class)
             ->setMethodCalls([
                 ['setAge', ['age' => 25]],
                 ['setName', ['foo']],
@@ -167,12 +177,13 @@ class ContainerTest extends TestCase
     public function testGetWithMissingOptionalClassDependency()
     {
         $container = new Container();
-        $container->register('director', function($name, $age, ActorInterface $actor = null){
+        $container->register('director', function ($name, $age, ActorInterface $actor = null) {
             $this->assertNull($actor);
+
             return new Director($name, $age);
         })->setArguments([
             'name' => 'bob',
-            'age' => 12
+            'age' => 12,
         ]);
         $container->get('director');
     }
@@ -180,12 +191,12 @@ class ContainerTest extends TestCase
     public function testProperties()
     {
         $container = new Container();
-        $container->register('director',Director::class);
-        $container->register('foo1',Foo::class)->setProperty('director', '@director');
+        $container->register('director', Director::class);
+        $container->register('foo1', Foo::class)->setProperty('director', '@director');
 
         $this->assertSame($container->get('director'), $container->get('foo1')->director);
 
-        $container->register('foo2',Foo::class)->setProperty('director', '@director');
+        $container->register('foo2', Foo::class)->setProperty('director', '@director');
         $this->assertSame($container->get('director'), $container->get('foo2')->director);
     }
 
@@ -207,7 +218,7 @@ class ContainerTest extends TestCase
     {
         $container = new Container();
         $container->setDefaults([
-            'share' => false
+            'share' => false,
         ]);
         $container->register('director', function () {
             return new Director('James', 26);
@@ -241,7 +252,7 @@ class ContainerTest extends TestCase
     {
         $container = new Container();
         $container->setDefaults([
-            'autowire' => false
+            'autowire' => false,
         ]);
         $container->register(Movie::class);
 
@@ -256,8 +267,8 @@ class ContainerTest extends TestCase
     public function testReference()
     {
         $container = new Container();
-        $container->register('director',Director::class);
-        $container->register('actor',Actor::class);
+        $container->register('director', Director::class);
+        $container->register('actor', Actor::class);
         $container->register(Movie::class)
             ->addArgument('@director')
             ->addArgument('@actor');
@@ -272,12 +283,12 @@ class ContainerTest extends TestCase
     {
         $container = new Container();
         $container->setParameters([
-            'foo' => 'bar'
+            'foo' => 'bar',
         ]);
         $this->assertEquals('bar', $container->getParameter('foo'));
         $container->addParameters([
             'foo' => 'baz',
-            'bar' => 'baz'
+            'bar' => 'baz',
         ]);
         $this->assertEquals(['foo' => 'baz', 'bar' => 'baz'], $container->getParameters());
         $container->setParameter('bar', 'baz');
@@ -289,29 +300,29 @@ class ContainerTest extends TestCase
         $container = new Container();
         $container->setParameters([
             'foo' => 'James',
-            'bar' => 45
+            'bar' => 45,
         ]);
 
-        $container->register('director', function(array $profile){
+        $container->register('director', function (array $profile) {
             return new Director($profile['name'], $profile['age']);
         })->setArguments([
             'profile' => [
                 'name' => '%foo% Bob',
                 'age' => '%bar%',
-            ]
+            ],
         ]);
         $director = $container->get('director');
         $this->assertEquals('James Bob', $director->getName());
         $this->assertEquals(45, $director->getAge());
 
         try {
-            $container->register('director2', function(array $profile){
+            $container->register('director2', function (array $profile) {
                 return new Director($profile['name'], $profile['age']);
             })->setArguments([
                 'profile' => [
                     'name' => '%baz% Bob',
                     'age' => '%bar%',
-                ]
+                ],
             ]);
             $container->get('director2');
             $this->fail();
@@ -324,7 +335,7 @@ class ContainerTest extends TestCase
     {
         $container = new Container();
         $container->setParameters([
-            'directorName' => 'James'
+            'directorName' => 'James',
         ]);
         $container->register('director', function (Container $container) {
             return new Director($container->getParameter('directorName'), 26);
@@ -338,12 +349,12 @@ class ContainerTest extends TestCase
         $container->setParameters([
             'directorName' => 'James',
             'director' => [
-                'age' => 26
-            ]
+                'age' => 26,
+            ],
         ]);
         $container->register('director', Director::class)->setArguments([
             '%directorName%',
-            '%director.age%'
+            '%director.age%',
         ]);
         $this->assertEquals('James', $container->get('director')->getName());
         $this->assertEquals(26, $container->get('director')->getAge());
@@ -353,13 +364,13 @@ class ContainerTest extends TestCase
     {
         $container = new Container();
 
-        $container->register('director', function(array $profile){
+        $container->register('director', function (array $profile) {
             return new Director($profile['name'], $profile['age']);
         })->setArguments([
             'profile' => [
                 'name' => 'James',
                 'age' => 45,
-            ]
+            ],
         ]);
         $container->setAlias('director-alias', 'director');
         $this->assertEquals('director', $container->getAlias('director-alias'));
@@ -372,9 +383,34 @@ class ContainerTest extends TestCase
         $container->register('director', Director::class)
             ->addTag('my.tag', array('hello' => 'world'));
 
-         $serviceIds = $container->findTaggedServiceIds('my.tag');
-         $this->assertEquals([
-              'director' => [['hello' => 'world']]
+        $serviceIds = $container->findTaggedServiceIds('my.tag');
+        $this->assertEquals([
+              'director' => [['hello' => 'world']],
          ], $serviceIds);
+    }
+
+    public function testExtend()
+    {
+        $container = new Container();
+        $container->register('director', Director::class)
+            ->setArguments(['James', 18]);
+        $container->extend('director')
+            ->setArguments(['Bob', 19]);
+        $this->assertEquals('Bob', $container->get('director')->getName());
+        $this->assertEquals(19, $container->get('director')->getAge());
+
+        try {
+            $container->extend('director');
+            $this->fail();
+        } catch (\Exception $exception) {
+            $this->assertInstanceOf(DependencyInjectionException::class, $exception);
+        }
+
+        try {
+            $container->extend('a_non_exists_id');
+            $this->fail();
+        } catch (\Exception $exception) {
+            $this->assertInstanceOf(NotFoundException::class, $exception);
+        }
     }
 }

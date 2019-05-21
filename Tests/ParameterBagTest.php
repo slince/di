@@ -1,4 +1,5 @@
 <?php
+
 namespace Slince\Di\Tests;
 
 use PHPUnit\Framework\TestCase;
@@ -11,20 +12,20 @@ class ParameterBagTest extends TestCase
         $parameters = new ParameterBag();
         $this->assertEquals([], $parameters->toArray());
         $parameters->setParameters([
-            'foo' => 'bar'
+            'foo' => 'bar',
         ]);
-        $this->assertEquals([ 'foo' => 'bar'], $parameters->toArray());
+        $this->assertEquals(['foo' => 'bar'], $parameters->toArray());
         $this->assertEquals('bar', $parameters->getParameter('foo'));
         $parameters->setParameter('foo', 'baz');
         $this->assertEquals('baz', $parameters->getParameter('foo'));
 
         $parameters->addParameters([
             'foo' => 'bar',
-            'bar' => 'baz'
+            'bar' => 'baz',
         ]);
         $this->assertEquals([
             'foo' => 'bar',
-            'bar' => 'baz'
-        ],  $parameters->toArray());
+            'bar' => 'baz',
+        ], $parameters->toArray());
     }
 }

@@ -16,7 +16,7 @@ use Dflydev\DotAccessData\Data;
 class ParameterBag extends Data
 {
     /**
-     * Sets array of parameters
+     * Sets array of parameters.
      *
      * @param $parameters
      */
@@ -26,7 +26,7 @@ class ParameterBag extends Data
     }
 
     /**
-     * Adds array of parameters
+     * Adds array of parameters.
      *
      * @param array $parameters
      */
@@ -36,10 +36,10 @@ class ParameterBag extends Data
     }
 
     /**
-     * Sets parameter with given name and value
+     * Sets parameter with given name and value.
      *
      * @param int|string $name
-     * @param mixed $value
+     * @param mixed      $value
      */
     public function setParameter($name, $value)
     {
@@ -47,10 +47,11 @@ class ParameterBag extends Data
     }
 
     /**
-     * Gets the parameter by its name
+     * Gets the parameter by its name.
      *
      * @param string $name
-     * @param mixed $default
+     * @param mixed  $default
+     *
      * @return mixed
      */
     public function getParameter($name, $default = null)
@@ -58,11 +59,13 @@ class ParameterBag extends Data
         if (isset($this->data[$name])) {
             return $this->data[$name];
         }
+
         return parent::get($name, $default);
     }
 
     /**
-     * Gets all parameters
+     * Gets all parameters.
+     *
      * @return array
      */
     public function toArray()

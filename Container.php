@@ -11,10 +11,11 @@
 
 namespace Slince\Di;
 
+use Slince\Di\Exception\DependencyInjectionException;
 use Slince\Di\Exception\NotFoundException;
 use Interop\Container\ContainerInterface;
 
-class Container implements ContainerInterface
+class Container implements \ArrayAccess, ContainerInterface
 {
     /**
      * @var array
@@ -22,7 +23,7 @@ class Container implements ContainerInterface
     protected $aliases = [];
 
     /**
-     * Array of Definitions
+     * Array of Definitions.
      *
      * @var Definition[]
      */
@@ -34,7 +35,8 @@ class Container implements ContainerInterface
     protected $instances;
 
     /**
-     * Array of parameters
+     * Array of parameters.
+     *
      * @var ParameterBag
      */
     protected $parameters;
@@ -51,11 +53,12 @@ class Container implements ContainerInterface
      *     'share' => true,
      *     'autowire' => true
      * ]
+     *
      * @var array
      */
     protected $defaults = [
         'share' => true,
-        'autowire' => true
+        'autowire' => true,
     ];
 
     public function __construct()
@@ -66,10 +69,56 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Determine if a given offset exists.
+     *
+     * @param string $key
+     *
+     * @return bool
+     */
+    public function offsetExists($key)
+    {
+        return $this->has($key);
+    }
+
+    /**
+     * Get the value at a given offset.
+     *
+     * @param string $key
+     *
+     * @return mixed
+     */
+    public function offsetGet($key)
+    {
+        return $this->get($key);
+    }
+
+    /**
+     * Set the value at a given offset.
+     *
+     * @param string $key
+     * @param mixed  $value
+     */
+    public function offsetSet($key, $value)
+    {
+        $this->register($key, $value);
+    }
+
+    /**
+     * Unset the value at a given offset.
+     *
+     * @param string $key
+     */
+    public function offsetUnset($key)
+    {
+        unset($this->definitions[$key], $this->instances[$key]);
+    }
+
+    /**
      * Register a definition.
      *
      * @param string|object $id
-     * @param mixed $concrete
+     * @param mixed         $concrete
+     *
      * @return Definition
      */
     public function register($id, $concrete = null)
@@ -86,13 +135,14 @@ class Container implements ContainerInterface
             ->setAutowired($this->defaults['autowire']);
 
         $definition = $this->setDefinition($id, $definition);
+
         return $definition;
     }
 
     /**
      * Set a definition.
      *
-     * @param string $id
+     * @param string     $id
      * @param Definition $definition
      *
      * @return Definition
@@ -100,6 +150,7 @@ class Container implements ContainerInterface
     public function setDefinition($id, Definition $definition)
     {
         $id = (string) $id;
+
         return $this->definitions[$id] = $definition;
     }
 
@@ -118,6 +169,7 @@ class Container implements ContainerInterface
      * Get id of the alias.
      *
      * @param string $alias
+     *
      * @return string|null
      */
     public function getAlias($alias)
@@ -126,9 +178,10 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Get a service instance by specified ID
+     * Get a service instance by specified ID.
      *
      * @param string $id
+     *
      * @return object
      */
     public function get($id)
@@ -152,6 +205,7 @@ class Container implements ContainerInterface
         if ($this->definitions[$id]->isShared()) {
             $this->instances[$id] = $instance;
         }
+
         return $instance;
     }
 
@@ -161,6 +215,26 @@ class Container implements ContainerInterface
     public function has($id)
     {
         return isset($this->definitions[$id]);
+    }
+
+    /**
+     * Extends a definition.
+     *
+     * @param string $id
+     *
+     * @return Definition
+     */
+    public function extend($id)
+    {
+        if (!$this->has($id)) {
+            throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
+        }
+        $definition = $this->definitions[$id];
+        if ($definition->getResolved()) {
+            throw new DependencyInjectionException(sprintf('Cannot override frozen service "%s".', $id));
+        }
+
+        return $definition;
     }
 
     /**
@@ -176,7 +250,9 @@ class Container implements ContainerInterface
      *             echo $tag['hello'];
      *         }
      *     }
+     *
      * @param string $name
+     *
      * @return array
      */
     public function findTaggedServiceIds($name)
@@ -187,11 +263,13 @@ class Container implements ContainerInterface
                 $tags[$id] = $definition->getTag($name);
             }
         }
+
         return $tags;
     }
 
     /**
-     * Gets all global parameters
+     * Gets all global parameters.
+     *
      * @return array
      */
     public function getParameters()
@@ -200,7 +278,8 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Sets array of parameters
+     * Sets array of parameters.
+     *
      * @param array $parameterStore
      */
     public function setParameters(array $parameterStore)
@@ -209,7 +288,8 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Add some parameters
+     * Add some parameters.
+     *
      * @param array $parameters
      */
     public function addParameters(array $parameters)
@@ -218,7 +298,7 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Sets a parameter with its name and value
+     * Sets a parameter with its name and value.
      *
      * @param $name
      * @param mixed $value
@@ -229,9 +309,11 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Gets a parameter by given name
+     * Gets a parameter by given name.
+     *
      * @param $name
      * @param mixed $default
+     *
      * @return mixed
      */
     public function getParameter($name, $default = null)
@@ -243,6 +325,7 @@ class Container implements ContainerInterface
      * Gets a default option of the container.
      *
      * @param string $option
+     *
      * @return mixed|null|boolean
      */
     public function getDefault($option)
@@ -254,6 +337,7 @@ class Container implements ContainerInterface
      * Configure defaults.
      *
      * @param array $defaults
+     *
      * @return array
      */
     public function setDefaults(array $defaults)

@@ -1,4 +1,5 @@
 <?php
+
 namespace Slince\Di\Tests;
 
 use PHPUnit\Framework\TestCase;
@@ -14,7 +15,7 @@ class ResolverTest extends TestCase
     public function testResolve()
     {
         $container = new Container();
-        $resolver =  new Resolver($container);
+        $resolver = new Resolver($container);
         $definition = new Definition(Director::class);
         $this->assertInstanceOf(Director::class, $resolver->resolve($definition));
     }
@@ -22,7 +23,7 @@ class ResolverTest extends TestCase
     public function testResolveInvalidClass()
     {
         $container = new Container();
-        $resolver =  new Resolver($container);
+        $resolver = new Resolver($container);
         $definition = new Definition('invalid-class');
         $this->expectException(DependencyInjectionException::class);
         $resolver->resolve($definition);
@@ -31,7 +32,7 @@ class ResolverTest extends TestCase
     public function testResolveNotInstantiateClass()
     {
         $container = new Container();
-        $resolver =  new Resolver($container);
+        $resolver = new Resolver($container);
         $definition = new Definition(ActorInterface::class);
         $this->expectException(DependencyInjectionException::class);
         $resolver->resolve($definition);
@@ -40,10 +41,10 @@ class ResolverTest extends TestCase
     public function testResolveWithProperty()
     {
         $container = new Container();
-        $resolver =  new Resolver($container);
+        $resolver = new Resolver($container);
         $definition = new Definition(Director::class);
         $definition->setProperties([
-            'gender' => 'male'
+            'gender' => 'male',
         ]);
         $this->assertEquals('male', $resolver->resolve($definition)->gender);
         $definition->setProperty('no_exist_property', 'foo');

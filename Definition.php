@@ -24,19 +24,22 @@ class Definition
     protected $class;
 
     /**
-     * Array of arguments
+     * Array of arguments.
+     *
      * @var array
      */
     protected $arguments = [];
 
     /**
-     * Array of setters
+     * Array of setters.
+     *
      * @var array
      */
     protected $calls = [];
 
     /**
-     * Array of properties
+     * Array of properties.
+     *
      * @var array
      */
     protected $properties = [];
@@ -44,7 +47,8 @@ class Definition
     /**
      * ['@Foo\Bar', 'createBaz']
      * or
-     * ['Foo\Bar', 'createBaz']
+     * ['Foo\Bar', 'createBaz'].
+     *
      * @var \callable
      */
     protected $factory;
@@ -71,7 +75,7 @@ class Definition
 
     public function __construct($concrete)
     {
-        $this->concrete= $concrete;
+        $this->concrete = $concrete;
     }
 
     /**
@@ -98,6 +102,7 @@ class Definition
      * Set class for the definition.
      *
      * @param string $class
+     *
      * @return $this
      */
     public function setClass($class)
@@ -108,7 +113,8 @@ class Definition
     }
 
     /**
-     * Gets the class
+     * Gets the class.
+     *
      * @return string
      */
     public function getClass()
@@ -118,11 +124,13 @@ class Definition
 
     /**
      * @param callable $factory
+     *
      * @return $this
      */
     public function setFactory($factory)
     {
         $this->factory = $factory;
+
         return $this;
     }
 
@@ -143,7 +151,8 @@ class Definition
     }
 
     /**
-     * Gets all properties
+     * Gets all properties.
+     *
      * @return array
      */
     public function getProperties()
@@ -152,9 +161,11 @@ class Definition
     }
 
     /**
-     * Adds a property
+     * Adds a property.
+     *
      * @param int|string $name
-     * @param mixed $value
+     * @param mixed      $value
+     *
      * @return $this
      */
     public function setProperty($name, $value)
@@ -165,8 +176,10 @@ class Definition
     }
 
     /**
-     * Gets the property by given name
+     * Gets the property by given name.
+     *
      * @param string $name
+     *
      * @return mixed
      */
     public function getProperty($name)
@@ -175,7 +188,7 @@ class Definition
     }
 
     /**
-     * add an argument
+     * add an argument.
      *
      * @param mixed $value
      *
@@ -184,6 +197,7 @@ class Definition
     public function addArgument($value)
     {
         $this->arguments[] = $value;
+
         return $this;
     }
 
@@ -191,12 +205,14 @@ class Definition
      * Sets a specific argument.
      *
      * @param string $key
-     * @param mixed $value
+     * @param mixed  $value
+     *
      * @return $this
      */
     public function setArgument($key, $value)
     {
         $this->arguments[$key] = $value;
+
         return $this;
     }
 
@@ -204,16 +220,18 @@ class Definition
      * Sets the arguments to pass to the service constructor/factory method.
      *
      * @param array $arguments
+     *
      * @return $this
      */
     public function setArguments(array $arguments)
     {
         $this->arguments = $arguments;
+
         return $this;
     }
 
     /**
-     * Gets all arguments of constructor
+     * Gets all arguments of constructor.
      *
      * @return array
      */
@@ -223,9 +241,10 @@ class Definition
     }
 
     /**
-     * Gets the argument at the specified position of constructor
+     * Gets the argument at the specified position of constructor.
      *
      * @param int|string $index
+     *
      * @return mixed
      */
     public function getArgument($index)
@@ -234,18 +253,20 @@ class Definition
     }
 
     /**
-     * Adds a method
+     * Adds a method.
      *
-     * @param string $method
+     * @param string       $method
      * @param string|array $arguments
+     *
      * @return $this
      */
     public function addMethodCall($method, $arguments)
     {
         $this->calls[] = [
             $method,
-            (array) $arguments
+            (array) $arguments,
         ];
+
         return $this;
     }
 
@@ -253,6 +274,7 @@ class Definition
      * Sets the methods to call after service initialization.
      *
      * @param array methods
+     *
      * @return $this
      */
     public function setMethodCalls(array $methods)
@@ -266,7 +288,7 @@ class Definition
     }
 
     /**
-     * Gets all methods
+     * Gets all methods.
      *
      * @return array
      */
@@ -297,6 +319,7 @@ class Definition
      * Sets tags for this definition.
      *
      * @param array $tags
+     *
      * @return $this
      */
     public function setTags(array $tags)
@@ -443,11 +466,13 @@ class Definition
      * Set the resolved instance for the definition.
      *
      * @param object $resolved
+     *
      * @return $this
      */
     public function setResolved($resolved)
     {
         $this->resolved = $resolved;
+
         return $this;
     }
 }

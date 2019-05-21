@@ -32,6 +32,7 @@ class Resolver
 
     /**
      * @param Definition $definition
+     *
      * @return mixed
      */
     public function resolve(Definition $definition)
@@ -72,7 +73,7 @@ class Resolver
     protected function createFromClass(Definition $definition)
     {
         $class = $definition->getClass();
-        if ($class === null) {
+        if (null === $class) {
             throw new ConfigException('You must set a class or factory for definition.');
         }
         try {
@@ -96,11 +97,13 @@ class Resolver
             }
             $instance = $reflection->newInstanceArgs($arguments);
         }
+
         return $instance;
     }
 
     /**
      * @param Definition $definition
+     *
      * @return object
      */
     protected function createFromFactory(Definition $definition)
@@ -109,6 +112,7 @@ class Resolver
         if (is_array($factory)) {
             $factory = $this->resolveArguments($factory);
         }
+
         return call_user_func_array($factory,
             $this->resolveArguments($definition->getArguments()) ?: [$this->container]
         );
@@ -116,7 +120,7 @@ class Resolver
 
     /**
      * @param Definition $definition
-     * @param object $instance
+     * @param object     $instance
      */
     protected function invokeMethods(Definition $definition, $instance)
     {
@@ -127,7 +131,7 @@ class Resolver
 
     /**
      * @param Definition $definition
-     * @param object $instance
+     * @param object     $instance
      */
     protected function invokeProperties(Definition $definition, $instance)
     {
@@ -141,8 +145,10 @@ class Resolver
      * Resolves all arguments for the function or method.
      *
      * @param \ReflectionFunctionAbstract $method
-     * @param array $arguments
+     * @param array                       $arguments
+     *
      * @throws
+     *
      * @return array
      */
     public function resolveReflectionArguments(
@@ -156,7 +162,7 @@ class Resolver
                 $solvedArguments[] = $arguments[$parameter->getPosition()];
             } elseif (isset($arguments[$parameter->name])) {
                 $solvedArguments[] = $arguments[$parameter->name];
-            } elseif (($dependency = $parameter->getClass()) != null) {
+            } elseif (null != ($dependency = $parameter->getClass())) {
                 $dependencyName = $dependency->name;
                 try {
                     $solvedArguments[] = $this->container->get($dependencyName);
@@ -177,17 +183,20 @@ class Resolver
                 ));
             }
         }
+
         return $solvedArguments;
     }
 
     /**
-     * Resolves array of parameters
+     * Resolves array of parameters.
+     *
      * @param array $arguments
+     *
      * @return array
      */
     protected function resolveArguments($arguments)
     {
-        return array_map(function($argument) {
+        return array_map(function ($argument) {
             if (is_array($argument)) {
                 return $this->resolveArguments($argument);
             } else {
@@ -197,10 +206,12 @@ class Resolver
     }
 
     /**
-     * Formats argument value
+     * Formats argument value.
      *
      * @param string $value
+     *
      * @return string
+     *
      * @throws DependencyInjectionException
      */
     protected function formatArgument($value)
@@ -210,14 +221,15 @@ class Resolver
                 return $this->container->get(substr($value, 1));
             }
             //"fool%bar%baz"
-            return preg_replace_callback("#%([^%\s]+)%#", function($matches) {
+            return preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
                 $key = $matches[1];
                 if ($parameter = $this->container->getParameter($key)) {
                     return $parameter;
                 }
-                throw new DependencyInjectionException(sprintf("Parameter [%s] is not defined", $key));
+                throw new DependencyInjectionException(sprintf('Parameter [%s] is not defined', $key));
             }, $value);
         }
+
         return $value;
     }
 }

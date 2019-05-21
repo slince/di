@@ -15,5 +15,4 @@ use Interop\Container\Exception\NotFoundException as BaseNotFoundException;
 
 class NotFoundException extends \InvalidArgumentException implements BaseNotFoundException
 {
-
 }

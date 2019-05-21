@@ -1,4 +1,5 @@
 <?php
+
 namespace Slince\Di\Tests\TestClass;
 
 class Movie
@@ -8,20 +9,22 @@ class Movie
     protected $time;
 
     /**
-     * 导演
+     * 导演.
+     *
      * @var Director
      */
     protected $director;
 
     /**
-     * 男演员
+     * 男演员.
+     *
      * @var ActorInterface
      */
     protected $actor;
 
-
     /**
-     * 女演员
+     * 女演员.
+     *
      * @var ActorInterface
      */
     protected $actress;
@@ -73,7 +76,8 @@ class Movie
     }
 
     /**
-     * 设置女演员
+     * 设置女演员.
+     *
      * @param ActorInterface $actress
      */
     public function setActress(ActorInterface $actress)

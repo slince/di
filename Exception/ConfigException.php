@@ -15,5 +15,4 @@ use Interop\Container\Exception\ContainerException;
 
 class ConfigException extends \InvalidArgumentException implements ContainerException
 {
-
 }
