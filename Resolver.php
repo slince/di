@@ -73,9 +73,6 @@ class Resolver
     protected function createFromClass(Definition $definition)
     {
         $class = $definition->getClass();
-        if (null === $class) {
-            throw new ConfigException('You must set a class or factory for definition.');
-        }
         try {
             $reflection = new \ReflectionClass($definition->getClass());
         } catch (\ReflectionException $e) {
