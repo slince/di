@@ -77,8 +77,6 @@ var_dump($foo->bar instanceof Acme\Bar); // true
 $container->register('bar', Acme\Bar::class);
 $container->register('foo', Acme\Foo::class)
     ->addArgument(new Slince\Di\Reference('bar')); //refer to 'bar'
-    // You can also use like following:
-    // ->addArgument('@bar'); 
     
 var_dump($container->get('bar') === $container->get('foo')->bar));    // true
 ```
@@ -116,7 +114,7 @@ you can instantiate the factory itself as a service too.
 ```php
 // call a method on the specified factory service
 $container->register(NewsletterManager::class, [
-    new Reference(NewsletterManagerFactory::class), // or use '@'
+    new Reference(NewsletterManagerFactory::class),
     'createNewsletterManager'
 ]);
 ```
@@ -167,8 +165,8 @@ $container->setParameters([
 
 $container->register('bar', Acme\Bar::class)
      ->setArguments([
-        'foo' => '%foo%',
-        'baz' => '%bar.baz%'
+        'foo' => $container->getParameter('foo'),
+        'baz' => $container->getParameter('bar.baz')
     ]);
 
 $bar = $container->get('bar');

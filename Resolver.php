@@ -87,7 +87,7 @@ class Resolver
         } else {
             $arguments = $this->resolveArguments($definition->getArguments());
             if ($definition->isAutowired()) {
-                $arguments = $this->resolveReflectionArguments($constructor, $arguments);
+                $arguments = $this->resolveDependencies($constructor->getParameters(), $arguments);
             }
             if (count($arguments) < $constructor->getNumberOfRequiredParameters()) {
                 throw new ConfigException(sprintf('Too few arguments for class "%s"', $class));
@@ -109,7 +109,6 @@ class Resolver
         if (is_array($factory)) {
             $factory = $this->resolveArguments($factory);
         }
-
         return call_user_func_array($factory,
             $this->resolveArguments($definition->getArguments()) ?: [$this->container]
         );
@@ -139,49 +138,39 @@ class Resolver
     }
 
     /**
-     * Resolves all arguments for the function or method.
+     * Resolve dependencies.
      *
-     * @param \ReflectionFunctionAbstract $method
-     * @param array                       $arguments
-     *
-     * @throws
-     *
+     * @param \ReflectionParameter[] $dependencies
+     * @param array $arguments
      * @return array
+     * @throws DependencyInjectionException
      */
-    public function resolveReflectionArguments(
-        \ReflectionFunctionAbstract $method,
-        array $arguments
-    ) {
-        $solvedArguments = [];
-        foreach ($method->getParameters() as $parameter) {
-            //If the dependency is provided directly
-            if (isset($arguments[$parameter->getPosition()])) {
-                $solvedArguments[] = $arguments[$parameter->getPosition()];
-            } elseif (isset($arguments[$parameter->name])) {
-                $solvedArguments[] = $arguments[$parameter->name];
-            } elseif (null != ($dependency = $parameter->getClass())) {
-                $dependencyName = $dependency->name;
-                try {
-                    $solvedArguments[] = $this->container->get($dependencyName);
-                } catch (NotFoundException $exception) {
-                    if ($parameter->isOptional()) {
-                        $solvedArguments[] = $parameter->getDefaultValue();
-                    } else {
-                        throw $exception;
-                    }
-                }
-            } elseif ($parameter->isOptional()) {
-                $solvedArguments[] = $parameter->getDefaultValue();
-            } else {
-                throw new DependencyInjectionException(sprintf(
-                    'Missing required parameter "%s" when calling "%s"',
-                    $parameter->name,
-                    $method->getName()
-                ));
+    protected function resolveDependencies($dependencies, $arguments)
+    {
+        $solved = [];
+        foreach ($dependencies as $dependency) {
+            if (isset($arguments[$dependency->getPosition()])) {
+                $solved[] = $arguments[$dependency->getPosition()];
+                continue;
             }
-        }
 
-        return $solvedArguments;
+            if (null !== $dependency->getClass()) {
+                $solved[] = $this->container->get($dependency->getClass()->name);
+                continue;
+            }
+
+            if ($dependency->isOptional()) {
+                $solved[] = $dependency->getDefaultValue();
+                continue;
+            }
+
+            throw new DependencyInjectionException(sprintf(
+                'Unresolvable dependency resolving "%s" in class "%s"',
+                $dependency->name,
+                $dependency->getDeclaringClass()->getName()
+            ));
+        }
+        return $solved;
     }
 
     /**
@@ -193,44 +182,12 @@ class Resolver
      */
     protected function resolveArguments($arguments)
     {
-        return array_map(function ($argument) {
-            if (is_array($argument)) {
-                return $this->resolveArguments($argument);
-            } else {
-                return $this->formatArgument($argument);
+        foreach ($arguments as &$argument) {
+            if ($argument instanceof Reference) {
+                $argument = $this->container->get($argument->getId());
+                continue;
             }
-        }, $arguments);
-    }
-
-    /**
-     * Formats argument value.
-     *
-     * @param string $value
-     *
-     * @return string
-     *
-     * @throws DependencyInjectionException
-     */
-    protected function formatArgument($value)
-    {
-        if ($value instanceof Reference) {
-            return $this->container->get($value->getId());
         }
-
-        if (is_string($value) && ($len = strlen($value)) > 0) {
-            if ($len >= 2 && '@' === $value[0]) {
-                return $this->container->get(substr($value, 1));
-            }
-            //"fool%bar%baz"
-            return preg_replace_callback("#%([^%\s]+)%#", function ($matches) {
-                $key = $matches[1];
-                if ($parameter = $this->container->getParameter($key)) {
-                    return $parameter;
-                }
-                throw new DependencyInjectionException(sprintf('Parameter [%s] is not defined', $key));
-            }, $value);
-        }
-
-        return $value;
+        return $arguments;
     }
 }

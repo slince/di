@@ -51,14 +51,14 @@ class ContainerTest extends TestCase
 
         // ['@service', 'factory']
         $container->register('foo', Foo::class);
-        $container->register('director2', ['@foo', 'createDirector'])
+        $container->register('director2', [new Reference('foo'), 'createDirector'])
             ->setArguments(['James', 18]);
 
         $director2 = $container->get('director2');
         $this->assertEquals('James', $director2->getName());
         $this->assertEquals(18, $director2->getAge());
 
-        $container->register('director2', ['@foo', 'createDirector'])
+        $container->register('director2', [new Reference('foo'), 'createDirector'])
             ->setArguments([1 => 18, 0 => 'James']);
 
         // [new Reference('service'), 'factory']
@@ -221,12 +221,8 @@ class ContainerTest extends TestCase
     {
         $container = new Container();
         $container->register('director', Director::class);
-        $container->register('foo1', Foo::class)->setProperty('director', '@director');
-
+        $container->register('foo1', Foo::class)->setProperty('director', new Reference('director'));
         $this->assertSame($container->get('director'), $container->get('foo1')->director);
-
-        $container->register('foo2',Foo::class)->setProperty('director', new Reference('director'));
-        $this->assertSame($container->get('director'), $container->get('foo2')->director);
     }
 
     public function testShare()
@@ -299,7 +295,7 @@ class ContainerTest extends TestCase
         $container->register('director', Director::class);
         $container->register('actor', Actor::class);
         $container->register(Movie::class)
-            ->addArgument('@director')
+            ->addArgument(new Reference('director'))
             ->addArgument(new Reference('actor'));
 
         $movie = $container->get(Movie::class);
@@ -336,28 +332,13 @@ class ContainerTest extends TestCase
             return new Director($profile['name'], $profile['age']);
         })->setArguments([
             'profile' => [
-                'name' => '%foo% Bob',
-                'age' => '%bar%',
+                'name' => $container->getParameter('foo'),
+                'age' => $container->getParameter('bar'),
             ],
         ]);
         $director = $container->get('director');
-        $this->assertEquals('James Bob', $director->getName());
+        $this->assertEquals('James', $director->getName());
         $this->assertEquals(45, $director->getAge());
-
-        try {
-            $container->register('director2', function (array $profile) {
-                return new Director($profile['name'], $profile['age']);
-            })->setArguments([
-                'profile' => [
-                    'name' => '%baz% Bob',
-                    'age' => '%bar%',
-                ],
-            ]);
-            $container->get('director2');
-            $this->fail();
-        } catch (\Exception $exception) {
-            $this->assertContains('is not defined', $exception->getMessage());
-        }
     }
 
     public function testSimpleGlobalParameter()
@@ -382,8 +363,8 @@ class ContainerTest extends TestCase
             ],
         ]);
         $container->register('director', Director::class)->setArguments([
-            '%directorName%',
-            '%director.age%',
+            $container->getParameter('directorName'),
+            $container->getParameter('director.age'),
         ]);
         $this->assertEquals('James', $container->get('director')->getName());
         $this->assertEquals(26, $container->get('director')->getAge());
