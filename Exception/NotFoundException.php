@@ -11,8 +11,8 @@
 
 namespace Slince\Di\Exception;
 
-use Interop\Container\Exception\NotFoundException as BaseNotFoundException;
+use Psr\Container\NotFoundExceptionInterface;
 
-class NotFoundException extends \InvalidArgumentException implements BaseNotFoundException
+class NotFoundException extends \InvalidArgumentException implements NotFoundExceptionInterface
 {
 }

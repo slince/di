@@ -11,8 +11,8 @@
 
 namespace Slince\Di\Exception;
 
-use Interop\Container\Exception\ContainerException;
+use Psr\Container\ContainerExceptionInterface;
 
-class ConfigException extends \InvalidArgumentException implements ContainerException
+class ConfigException extends \InvalidArgumentException implements ContainerExceptionInterface
 {
 }

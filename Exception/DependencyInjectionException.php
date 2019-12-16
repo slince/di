@@ -11,8 +11,8 @@
 
 namespace Slince\Di\Exception;
 
-use Interop\Container\Exception\ContainerException;
+use Psr\Container\ContainerExceptionInterface;
 
-class DependencyInjectionException extends \Exception implements ContainerException
+class DependencyInjectionException extends \Exception implements ContainerExceptionInterface
 {
 }
