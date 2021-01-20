@@ -63,12 +63,12 @@ class Definition
     /**
      * @var boolean
      */
-    protected $autowired;
+    protected $autowired = true;
 
     /**
      * @var boolean
      */
-    protected $shared;
+    protected $shared = true;
 
     /**
      * @var object
@@ -129,7 +129,7 @@ class Definition
      *
      * @return $this
      */
-    public function setFactory(callable $factory)
+    public function setFactory($factory)
     {
         $this->factory = $factory;
 
