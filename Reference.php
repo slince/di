@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /*
  * This file is part of the slince/di package.
  *
@@ -17,7 +20,7 @@ class Reference
      */
     protected $id;
 
-    public function __construct($id)
+    public function __construct(string $id)
     {
         $this->id = $id;
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the slince/di package.
  *
@@ -153,8 +155,13 @@ class Resolver
                 continue;
             }
 
-            if (null !== $dependency->getClass()) {
-                $solved[] = $this->container->get($dependency->getClass()->name);
+            if (isset($arguments[$dependency->getName()])) {
+                $solved[] = $arguments[$dependency->getName()];
+                continue;
+            }
+
+            if (null !== ($type = $dependency->getType()) && !$type->isBuiltin()) {
+                $solved[] = $this->container->get($type->getName());
                 continue;
             }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the slince/di package.
  *
@@ -105,7 +107,7 @@ class Definition
      *
      * @return $this
      */
-    public function setClass($class)
+    public function setClass(string $class)
     {
         $this->class = $class;
 
@@ -127,7 +129,7 @@ class Definition
      *
      * @return $this
      */
-    public function setFactory($factory)
+    public function setFactory(callable $factory)
     {
         $this->factory = $factory;
 
@@ -168,7 +170,7 @@ class Definition
      *
      * @return $this
      */
-    public function setProperty($name, $value)
+    public function setProperty(string $name, $value)
     {
         $this->properties[$name] = $value;
 
@@ -182,7 +184,7 @@ class Definition
      *
      * @return mixed
      */
-    public function getProperty($name)
+    public function getProperty(string $name)
     {
         return isset($this->properties[$name]) ? $this->properties[$name] : null;
     }
@@ -209,7 +211,7 @@ class Definition
      *
      * @return $this
      */
-    public function setArgument($key, $value)
+    public function setArgument(string $key, $value)
     {
         $this->arguments[$key] = $value;
 
@@ -260,7 +262,7 @@ class Definition
      *
      * @return $this
      */
-    public function addMethodCall($method, $arguments)
+    public function addMethodCall(string $method, $arguments)
     {
         $this->calls[] = [
             $method,
@@ -304,7 +306,7 @@ class Definition
      *
      * @return bool
      */
-    public function hasMethodCall($method)
+    public function hasMethodCall(string $method)
     {
         foreach ($this->calls as $call) {
             if ($call[0] === $method) {
@@ -346,7 +348,7 @@ class Definition
      *
      * @return array An array of attributes
      */
-    public function getTag($name)
+    public function getTag(string $name)
     {
         return isset($this->tags[$name]) ? $this->tags[$name] : array();
     }
@@ -359,7 +361,7 @@ class Definition
      *
      * @return $this
      */
-    public function addTag($name, array $attributes = array())
+    public function addTag(string $name, array $attributes = array())
     {
         $this->tags[$name][] = $attributes;
 
@@ -373,7 +375,7 @@ class Definition
      *
      * @return bool
      */
-    public function hasTag($name)
+    public function hasTag(string $name)
     {
         return isset($this->tags[$name]);
     }
@@ -385,7 +387,7 @@ class Definition
      *
      * @return $this
      */
-    public function clearTag($name)
+    public function clearTag(string $name)
     {
         unset($this->tags[$name]);
 
@@ -409,7 +411,7 @@ class Definition
      *
      * @return bool
      */
-    public function isAutowired()
+    public function isAutowired(): bool
     {
         return $this->autowired;
     }
@@ -447,7 +449,7 @@ class Definition
      *
      * @return bool
      */
-    public function isShared()
+    public function isShared(): bool
     {
         return $this->shared;
     }

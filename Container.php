@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the slince/di package.
  *
@@ -121,7 +123,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return Definition
      */
-    public function register($id, $concrete = null)
+    public function register($id, $concrete = null): Definition
     {
         if (null === $concrete) {
             $concrete = $id;
@@ -147,10 +149,8 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return Definition
      */
-    public function setDefinition($id, Definition $definition)
+    public function setDefinition(string $id, Definition $definition)
     {
-        $id = (string) $id;
-
         return $this->definitions[$id] = $definition;
     }
 
@@ -160,7 +160,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $alias
      * @param string $id
      */
-    public function setAlias($alias, $id)
+    public function setAlias(string $alias, $id)
     {
         $this->aliases[$alias] = $id;
     }
@@ -172,7 +172,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return string|null
      */
-    public function getAlias($alias)
+    public function getAlias(string $alias)
     {
         return isset($this->aliases[$alias]) ? $this->aliases[$alias] : null;
     }
@@ -212,7 +212,7 @@ class Container implements \ArrayAccess, ContainerInterface
     /**
      * {@inheritdoc}
      */
-    public function has($id)
+    public function has($id): bool
     {
         return isset($this->definitions[$id]);
     }
@@ -224,7 +224,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return Definition
      */
-    public function extend($id)
+    public function extend(string $id): Definition
     {
         if (!$this->has($id)) {
             throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
@@ -255,7 +255,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return array
      */
-    public function findTaggedServiceIds($name)
+    public function findTaggedServiceIds(string $name)
     {
         $tags = array();
         foreach ($this->definitions as $id => $definition) {
@@ -303,7 +303,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param $name
      * @param mixed $value
      */
-    public function setParameter($name, $value)
+    public function setParameter(string $name, $value)
     {
         $this->parameters->setParameter($name, $value);
     }
@@ -316,7 +316,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return mixed
      */
-    public function getParameter($name, $default = null)
+    public function getParameter(string $name, $default = null)
     {
         return $this->parameters->getParameter($name, $default);
     }
@@ -328,7 +328,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return mixed|null|boolean
      */
-    public function getDefault($option)
+    public function getDefault(string $option)
     {
         return isset($this->defaults[$option]) ? $this->defaults[$option] : null;
     }
