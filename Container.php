@@ -53,7 +53,8 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * [
      *     'share' => true,
-     *     'autowire' => true
+     *     'autowire' => true,
+     *     'autoregister' => true
      * ]
      *
      * @var array
@@ -61,6 +62,7 @@ class Container implements \ArrayAccess, ContainerInterface
     protected $defaults = [
         'share' => true,
         'autowire' => true,
+        'autoregister' => true
     ];
 
     public function __construct()
@@ -136,9 +138,7 @@ class Container implements \ArrayAccess, ContainerInterface
             ->setShared($this->defaults['share'])
             ->setAutowired($this->defaults['autowire']);
 
-        $definition = $this->setDefinition($id, $definition);
-
-        return $definition;
+        return $this->setDefinition($id, $definition);
     }
 
     /**
@@ -149,7 +149,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return Definition
      */
-    public function setDefinition(string $id, Definition $definition)
+    public function setDefinition(string $id, Definition $definition): Definition
     {
         return $this->definitions[$id] = $definition;
     }
@@ -160,7 +160,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $alias
      * @param string $id
      */
-    public function setAlias(string $alias, $id)
+    public function setAlias(string $alias, string $id)
     {
         $this->aliases[$alias] = $id;
     }
@@ -172,9 +172,9 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return string|null
      */
-    public function getAlias(string $alias)
+    public function getAlias(string $alias): ?string
     {
-        return isset($this->aliases[$alias]) ? $this->aliases[$alias] : null;
+        return $this->aliases[$alias] ?? null;
     }
 
     /**
@@ -184,21 +184,48 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return object
      */
-    public function get($id)
+    public function get(string $id)
     {
-        if (isset($this->aliases[$id])) {
-            $id = $this->aliases[$id];
-        }
+        $id = $this->resolveAlias($id);
+
         if (isset($this->instances[$id])) {
             return $this->instances[$id];
         }
 
-        //If there is no matching definition, creates a definition.
-        if (!$this->has($id) && class_exists($id)) {
-            $this->register($id);
+        return $this->resolveInstance($id);
+    }
+
+    /**
+     * Get a service instance by specified ID.
+     *
+     * @param string $id
+     *
+     * @return object
+     */
+    public function getNew(string $id)
+    {
+        $id = $this->resolveAlias($id);
+
+        return $this->resolveInstance($id);
+    }
+
+    protected function resolveAlias(string $id)
+    {
+        if (isset($this->aliases[$id])) {
+            $id = $this->aliases[$id];
         }
+        return $id;
+    }
+
+    protected function resolveInstance(string $id)
+    {
         if (!$this->has($id)) {
-            throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
+            //If there is no matching definition, creates a definition.
+            if ($this->defaults['autoregister'] && class_exists($id)) {
+                $this->register($id);
+            } else {
+                throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
+            }
         }
         // resolve instance.
         $instance = $this->resolver->resolve($this->definitions[$id]);
@@ -223,6 +250,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $id
      *
      * @return Definition
+     * @throws DependencyInjectionException
      */
     public function extend(string $id): Definition
     {
@@ -255,7 +283,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return array
      */
-    public function findTaggedServiceIds(string $name)
+    public function findTaggedServiceIds(string $name): array
     {
         $tags = array();
         foreach ($this->definitions as $id => $definition) {
@@ -272,7 +300,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return array
      */
-    public function getParameters()
+    public function getParameters(): array
     {
         return $this->parameters->toArray();
     }
@@ -300,7 +328,7 @@ class Container implements \ArrayAccess, ContainerInterface
     /**
      * Sets a parameter with its name and value.
      *
-     * @param $name
+     * @param string $name
      * @param mixed $value
      */
     public function setParameter(string $name, $value)
@@ -311,7 +339,7 @@ class Container implements \ArrayAccess, ContainerInterface
     /**
      * Gets a parameter by given name.
      *
-     * @param $name
+     * @param string $name
      * @param mixed $default
      *
      * @return mixed
@@ -326,11 +354,11 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @param string $option
      *
-     * @return mixed|null|boolean
+     * @return mixed
      */
     public function getDefault(string $option)
     {
-        return isset($this->defaults[$option]) ? $this->defaults[$option] : null;
+        return $this->defaults[$option] ?? null;
     }
 
     /**
@@ -338,10 +366,9 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @param array $defaults
      *
-     * @return array
      */
-    public function setDefaults(array $defaults)
+    public function setDefaults(array $defaults): array
     {
-        return $this->defaults = array_merge($this->defaults, $defaults);
+        $this->defaults = array_merge($this->defaults, $defaults);
     }
 }
