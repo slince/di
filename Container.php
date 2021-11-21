@@ -151,7 +151,31 @@ class Container implements \ArrayAccess, ContainerInterface
      */
     public function setDefinition(string $id, Definition $definition): Definition
     {
+        unset($this->aliases[$id]);
         return $this->definitions[$id] = $definition;
+    }
+
+    /**
+     * Adds the service definitions.
+     *
+     * @param Definition[] $definitions An array of service definitions
+     */
+    public function addDefinitions(array $definitions)
+    {
+        foreach ($definitions as $id => $definition) {
+            $this->setDefinition($id, $definition);
+        }
+    }
+
+    /**
+     * Sets the service definitions.
+     *
+     * @param Definition[] $definitions An array of service definitions
+     */
+    public function setDefinitions(array $definitions)
+    {
+        $this->definitions = [];
+        $this->addDefinitions($definitions);
     }
 
     /**
