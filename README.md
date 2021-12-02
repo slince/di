@@ -1,6 +1,6 @@
 ﻿# Dependency Injection Container
 
-[![Build Status](https://img.shields.io/travis/com/slince/di/master.svg?style=flat-square)](https://travis-ci.com/slince/di)
+[![Build Status](https://img.shields.io/travis/com/slince/di/master.svg?style=flat-square)](https://app.travis-ci.com/github/slince/di)
 [![Coverage Status](https://img.shields.io/codecov/c/github/slince/di.svg?style=flat-square)](https://codecov.io/github/slince/di)
 [![Total Downloads](https://img.shields.io/packagist/dt/slince/di.svg?style=flat-square)](https://packagist.org/packages/slince/di)
 [![Latest Stable Version](https://img.shields.io/packagist/v/slince/di.svg?style=flat-square&label=stable)](https://packagist.org/packages/slince/di)
