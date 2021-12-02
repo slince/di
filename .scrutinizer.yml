@@ -53,3 +53,10 @@ tools:
         excluded_dirs:
             - "Tests/*"
             - "vendor/*"
+            
+build:
+  nodes:
+    analysis:
+      tests:
+        override:
+          - php-scrutinizer-run
