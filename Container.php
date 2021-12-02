@@ -391,7 +391,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param array $defaults
      *
      */
-    public function setDefaults(array $defaults): array
+    public function setDefaults(array $defaults)
     {
         $this->defaults = array_merge($this->defaults, $defaults);
     }
