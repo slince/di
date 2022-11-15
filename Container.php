@@ -79,7 +79,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return bool
      */
-    public function offsetExists($key)
+    public function offsetExists($key): bool
     {
         return $this->has($key);
     }
@@ -91,6 +91,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return mixed
      */
+    #[\ReturnTypeWillChange]
     public function offsetGet($key)
     {
         return $this->get($key);
@@ -102,7 +103,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $key
      * @param mixed  $value
      */
-    public function offsetSet($key, $value)
+    public function offsetSet($key, $value): void
     {
         $this->register($key, $value);
     }
@@ -112,7 +113,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @param string $key
      */
-    public function offsetUnset($key)
+    public function offsetUnset($key): void
     {
         unset($this->definitions[$key], $this->instances[$key]);
     }
