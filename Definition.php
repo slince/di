@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Slince\Di;
 
-class Definition
+final class Definition
 {
     /**
      * @var mixed
@@ -21,59 +21,59 @@ class Definition
     protected $concrete;
 
     /**
-     * @var string
+     * @var ?string
      */
-    protected $class;
+    protected ?string $class = null;
 
     /**
      * Array of arguments.
      *
      * @var array
      */
-    protected $arguments = [];
+    protected array $arguments = [];
 
     /**
      * Array of setters.
      *
      * @var array
      */
-    protected $calls = [];
+    protected array $calls = [];
 
     /**
      * Array of properties.
      *
      * @var array
      */
-    protected $properties = [];
+    protected array $properties = [];
 
     /**
      * ['@Foo\Bar', 'createBaz']
      * or
      * ['Foo\Bar', 'createBaz'].
      *
-     * @var \callable
+     * @var callable|array
      */
     protected $factory;
 
     /**
      * @var array
      */
-    protected $tags;
+    protected array $tags;
 
     /**
      * @var boolean
      */
-    protected $autowired = true;
+    protected bool $autowired = true;
 
     /**
      * @var boolean
      */
-    protected $shared = true;
+    protected bool $shared = true;
 
     /**
-     * @var object
+     * @var ?object
      */
-    protected $resolved;
+    protected ?object $resolved = null;
 
     public function __construct($concrete)
     {
@@ -107,7 +107,7 @@ class Definition
      *
      * @return $this
      */
-    public function setClass(string $class)
+    public function setClass(string $class): Definition
     {
         $this->class = $class;
 
@@ -117,19 +117,19 @@ class Definition
     /**
      * Gets the class.
      *
-     * @return string
+     * @return ?string
      */
-    public function getClass()
+    public function getClass(): ?string
     {
         return $this->class;
     }
 
     /**
-     * @param callable $factory
+     * @param callable|array $factory
      *
      * @return $this
      */
-    public function setFactory($factory)
+    public function setFactory($factory): Definition
     {
         $this->factory = $factory;
 
@@ -137,7 +137,7 @@ class Definition
     }
 
     /**
-     * @return callable
+     * @return callable|array
      */
     public function getFactory()
     {
@@ -147,7 +147,7 @@ class Definition
     /**
      * @param array $properties
      */
-    public function setProperties($properties)
+    public function setProperties(array $properties)
     {
         $this->properties = $properties;
     }
@@ -157,7 +157,7 @@ class Definition
      *
      * @return array
      */
-    public function getProperties()
+    public function getProperties(): array
     {
         return $this->properties;
     }
@@ -170,7 +170,7 @@ class Definition
      *
      * @return $this
      */
-    public function setProperty(string $name, $value)
+    public function setProperty(string $name, $value): Definition
     {
         $this->properties[$name] = $value;
 
@@ -186,7 +186,7 @@ class Definition
      */
     public function getProperty(string $name)
     {
-        return isset($this->properties[$name]) ? $this->properties[$name] : null;
+        return $this->properties[$name] ?? null;
     }
 
     /**
@@ -196,7 +196,7 @@ class Definition
      *
      * @return $this
      */
-    public function addArgument($value)
+    public function addArgument($value): Definition
     {
         $this->arguments[] = $value;
 
@@ -211,7 +211,7 @@ class Definition
      *
      * @return $this
      */
-    public function setArgument(string $key, $value)
+    public function setArgument(string $key, $value): Definition
     {
         $this->arguments[$key] = $value;
 
@@ -225,7 +225,7 @@ class Definition
      *
      * @return $this
      */
-    public function setArguments(array $arguments)
+    public function setArguments(array $arguments): Definition
     {
         $this->arguments = $arguments;
 
@@ -237,7 +237,7 @@ class Definition
      *
      * @return array
      */
-    public function getArguments()
+    public function getArguments(): array
     {
         return $this->arguments;
     }
@@ -251,7 +251,7 @@ class Definition
      */
     public function getArgument($index)
     {
-        return isset($this->arguments[$index]) ? $this->arguments[$index] : null;
+        return $this->arguments[$index] ?? null;
     }
 
     /**
@@ -262,7 +262,7 @@ class Definition
      *
      * @return $this
      */
-    public function addMethodCall(string $method, $arguments)
+    public function addMethodCall(string $method, $arguments): Definition
     {
         $this->calls[] = [
             $method,
@@ -279,7 +279,7 @@ class Definition
      *
      * @return $this
      */
-    public function setMethodCalls(array $methods)
+    public function setMethodCalls(array $methods): Definition
     {
         $this->calls = array();
         foreach ($methods as $call) {
@@ -294,7 +294,7 @@ class Definition
      *
      * @return array
      */
-    public function getMethodCalls()
+    public function getMethodCalls(): array
     {
         return $this->calls;
     }
@@ -306,7 +306,7 @@ class Definition
      *
      * @return bool
      */
-    public function hasMethodCall(string $method)
+    public function hasMethodCall(string $method): bool
     {
         foreach ($this->calls as $call) {
             if ($call[0] === $method) {
@@ -324,7 +324,7 @@ class Definition
      *
      * @return $this
      */
-    public function setTags(array $tags)
+    public function setTags(array $tags): Definition
     {
         $this->tags = $tags;
 
@@ -336,7 +336,7 @@ class Definition
      *
      * @return array An array of tags
      */
-    public function getTags()
+    public function getTags(): array
     {
         return $this->tags;
     }
@@ -348,9 +348,9 @@ class Definition
      *
      * @return array An array of attributes
      */
-    public function getTag(string $name)
+    public function getTag(string $name): array
     {
-        return isset($this->tags[$name]) ? $this->tags[$name] : array();
+        return $this->tags[$name] ?? array();
     }
 
     /**
@@ -361,7 +361,7 @@ class Definition
      *
      * @return $this
      */
-    public function addTag(string $name, array $attributes = array())
+    public function addTag(string $name, array $attributes = array()): Definition
     {
         $this->tags[$name][] = $attributes;
 
@@ -375,7 +375,7 @@ class Definition
      *
      * @return bool
      */
-    public function hasTag(string $name)
+    public function hasTag(string $name): bool
     {
         return isset($this->tags[$name]);
     }
@@ -387,7 +387,7 @@ class Definition
      *
      * @return $this
      */
-    public function clearTag(string $name)
+    public function clearTag(string $name): Definition
     {
         unset($this->tags[$name]);
 
@@ -399,7 +399,7 @@ class Definition
      *
      * @return $this
      */
-    public function clearTags()
+    public function clearTags(): Definition
     {
         $this->tags = array();
 
@@ -423,9 +423,9 @@ class Definition
      *
      * @return $this
      */
-    public function setAutowired($autowired)
+    public function setAutowired(bool $autowired): Definition
     {
-        $this->autowired = (bool) $autowired;
+        $this->autowired = $autowired;
 
         return $this;
     }
@@ -437,9 +437,9 @@ class Definition
      *
      * @return $this
      */
-    public function setShared($shared)
+    public function setShared(bool $shared): Definition
     {
-        $this->shared = (bool) $shared;
+        $this->shared = $shared;
 
         return $this;
     }
@@ -459,7 +459,7 @@ class Definition
      *
      * @return object
      */
-    public function getResolved()
+    public function getResolved(): ?object
     {
         return $this->resolved;
     }
@@ -471,7 +471,7 @@ class Definition
      *
      * @return $this
      */
-    public function setResolved($resolved)
+    public function setResolved(object $resolved): Definition
     {
         $this->resolved = $resolved;
 

@@ -12,13 +12,13 @@ declare(strict_types=1);
  */
 namespace Slince\Di;
 
-class Reference
+final class Reference
 {
     /**
      * Service ID
      * @var string
      */
-    protected $id;
+    protected string $id;
 
     public function __construct(string $id)
     {
@@ -30,7 +30,7 @@ class Reference
      *
      * @return string
      */
-    public function getId()
+    public function getId(): string
     {
         return $this->id;
     }

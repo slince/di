@@ -92,7 +92,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return mixed
      */
-    public function offsetGet($key)
+    public function offsetGet($key): object
     {
         return $this->get($key);
     }
@@ -210,7 +210,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @return object
      * @throws DependencyInjectionException|ReflectionException
      */
-    public function get(string $id)
+    public function get(string $id): object
     {
         $id = $this->resolveAlias($id);
 
@@ -227,6 +227,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $id
      *
      * @return object
+     * @throws DependencyInjectionException|ReflectionException
      */
     public function getNew(string $id): object
     {

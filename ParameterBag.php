@@ -15,7 +15,7 @@ namespace Slince\Di;
 
 use Dflydev\DotAccessData\Data;
 
-class ParameterBag extends Data
+final class ParameterBag extends Data
 {
     /**
      * Sets array of parameters.
@@ -56,7 +56,7 @@ class ParameterBag extends Data
      *
      * @return mixed
      */
-    public function getParameter($name, $default = null)
+    public function getParameter(string $name, $default = null)
     {
         if (isset($this->data[$name])) {
             return $this->data[$name];
@@ -70,7 +70,7 @@ class ParameterBag extends Data
      *
      * @return array
      */
-    public function toArray()
+    public function toArray(): array
     {
         return $this->data;
     }
