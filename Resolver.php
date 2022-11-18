@@ -181,7 +181,7 @@ class Resolver
                 }
             }
 
-            if ($dependency->isOptional()) {
+            if ($dependency->isDefaultValueAvailable()) {
                 $solved[] = $dependency->getDefaultValue();
                 continue;
             }
