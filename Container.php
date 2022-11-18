@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Slince\Di;
 
 use Psr\Container\ContainerInterface;
+use ReflectionException;
 use Slince\Di\Exception\DependencyInjectionException;
 use Slince\Di\Exception\NotFoundException;
 
@@ -22,31 +23,31 @@ class Container implements \ArrayAccess, ContainerInterface
     /**
      * @var array
      */
-    protected $aliases = [];
+    protected array $aliases = [];
 
     /**
      * Array of Definitions.
      *
      * @var Definition[]
      */
-    protected $definitions = [];
+    protected array $definitions = [];
 
     /**
      * @var array
      */
-    protected $instances;
+    protected array $instances;
 
     /**
      * Array of parameters.
      *
      * @var ParameterBag
      */
-    protected $parameters;
+    protected ParameterBag $parameters;
 
     /**
      * @var Resolver
      */
-    protected $resolver;
+    protected Resolver $resolver;
 
     /**
      * Defaults for the container.
@@ -59,7 +60,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @var array
      */
-    protected $defaults = [
+    protected array $defaults = [
         'share' => true,
         'autowire' => true,
         'autoregister' => true
@@ -79,7 +80,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return bool
      */
-    public function offsetExists($key)
+    public function offsetExists($key): bool
     {
         return $this->has($key);
     }
@@ -102,7 +103,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $key
      * @param mixed  $value
      */
-    public function offsetSet($key, $value)
+    public function offsetSet($key, $value): void
     {
         $this->register($key, $value);
     }
@@ -112,7 +113,7 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @param string $key
      */
-    public function offsetUnset($key)
+    public function offsetUnset($key): void
     {
         unset($this->definitions[$key], $this->instances[$key]);
     }
@@ -207,6 +208,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $id
      *
      * @return object
+     * @throws DependencyInjectionException|ReflectionException
      */
     public function get(string $id)
     {
@@ -226,14 +228,14 @@ class Container implements \ArrayAccess, ContainerInterface
      *
      * @return object
      */
-    public function getNew(string $id)
+    public function getNew(string $id): object
     {
         $id = $this->resolveAlias($id);
 
         return $this->resolveInstance($id);
     }
 
-    protected function resolveAlias(string $id)
+    protected function resolveAlias(string $id): string
     {
         if (isset($this->aliases[$id])) {
             $id = $this->aliases[$id];
@@ -241,7 +243,10 @@ class Container implements \ArrayAccess, ContainerInterface
         return $id;
     }
 
-    protected function resolveInstance(string $id)
+    /**
+     * @throws DependencyInjectionException|ReflectionException
+     */
+    protected function resolveInstance(string $id): object
     {
         if (!$this->has($id)) {
             //If there is no matching definition, creates a definition.

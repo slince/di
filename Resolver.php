@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Slince\Di;
 
+use ReflectionException;
 use Slince\Di\Exception\ConfigException;
 use Slince\Di\Exception\DependencyInjectionException;
 
@@ -21,7 +22,7 @@ class Resolver
     /**
      * @var Container
      */
-    protected $container;
+    protected Container $container;
 
     /**
      * @param Container $container
@@ -32,11 +33,14 @@ class Resolver
     }
 
     /**
+     * Create one instance for the given definition.
+     *
      * @param Definition $definition
      *
-     * @return mixed
+     * @return object
+     * @throws DependencyInjectionException|ReflectionException
      */
-    public function resolve(Definition $definition)
+    public function resolve(Definition $definition): object
     {
         $this->parseConcrete($definition);
 
@@ -71,12 +75,17 @@ class Resolver
         }
     }
 
-    protected function createFromClass(Definition $definition)
+    /**
+     * Create instance for the class.
+     *
+     * @throws DependencyInjectionException|ReflectionException
+     */
+    protected function createFromClass(Definition $definition): object
     {
         $class = $definition->getClass();
         try {
             $reflection = new \ReflectionClass($definition->getClass());
-        } catch (\ReflectionException $e) {
+        } catch (ReflectionException $e) {
             throw new DependencyInjectionException(sprintf('Class "%s" is invalid', $definition->getClass()));
         }
         if (!$reflection->isInstantiable()) {
@@ -103,8 +112,9 @@ class Resolver
      * @param Definition $definition
      *
      * @return object
+     * @throws DependencyInjectionException
      */
-    protected function createFromFactory(Definition $definition)
+    protected function createFromFactory(Definition $definition): object
     {
         $factory = $definition->getFactory();
         if (is_array($factory)) {
@@ -117,9 +127,10 @@ class Resolver
 
     /**
      * @param Definition $definition
-     * @param object     $instance
+     * @param object $instance
+     * @throws DependencyInjectionException
      */
-    protected function invokeMethods(Definition $definition, $instance)
+    protected function invokeMethods(Definition $definition, object $instance)
     {
         foreach ($definition->getMethodCalls() as $method) {
             call_user_func_array([$instance, $method[0]], $this->resolveArguments($method[1]));
@@ -128,9 +139,10 @@ class Resolver
 
     /**
      * @param Definition $definition
-     * @param object     $instance
+     * @param object $instance
+     * @throws DependencyInjectionException
      */
-    protected function invokeProperties(Definition $definition, $instance)
+    protected function invokeProperties(Definition $definition, object $instance)
     {
         $properties = $this->resolveArguments($definition->getProperties());
         foreach ($properties as $name => $value) {
@@ -144,9 +156,9 @@ class Resolver
      * @param \ReflectionParameter[] $dependencies
      * @param array $arguments
      * @return array
-     * @throws DependencyInjectionException
+     * @throws DependencyInjectionException|ReflectionException
      */
-    protected function resolveDependencies($dependencies, $arguments)
+    protected function resolveDependencies(array $dependencies, array $arguments): array
     {
         $solved = [];
         foreach ($dependencies as $dependency) {
@@ -161,8 +173,12 @@ class Resolver
             }
 
             if (null !== ($type = $dependency->getType()) && !$type->isBuiltin()) {
-                $solved[] = $this->container->get($type->getName());
-                continue;
+                try {
+                    $solved[] = $this->container->get($type->getName());
+                    continue;
+                } catch (DependencyInjectionException $exception) {
+                    // ignore this
+                }
             }
 
             if ($dependency->isOptional()) {
@@ -185,13 +201,13 @@ class Resolver
      * @param array $arguments
      *
      * @return array
+     * @throws DependencyInjectionException
      */
-    protected function resolveArguments($arguments)
+    protected function resolveArguments(array $arguments): array
     {
         foreach ($arguments as &$argument) {
             if ($argument instanceof Reference) {
                 $argument = $this->container->get($argument->getId());
-                continue;
             }
         }
         return $arguments;

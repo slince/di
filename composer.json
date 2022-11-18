@@ -11,7 +11,7 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "php": ">=7.2.5",
+        "php": ">=7.4",
         "dflydev/dot-access-data": "^3.0",
         "psr/container": "^1.0"
     },
