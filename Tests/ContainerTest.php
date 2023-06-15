@@ -15,14 +15,6 @@ use Slince\Di\Tests\TestClass\Director;
 use Slince\Di\Tests\TestClass\Foo;
 use Slince\Di\Tests\TestClass\Movie;
 
-interface FooInterface { }
-
-class Foo1 implements FooInterface { }
-
-class Bar1 {
-    public function __construct(?FooInterface $foo = null) { }
-}
-
 class ContainerTest extends TestCase
 {
     public function testArrayAccess()
