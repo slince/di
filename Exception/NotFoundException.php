@@ -13,6 +13,6 @@ namespace Slince\Di\Exception;
 
 use Psr\Container\NotFoundExceptionInterface;
 
-class NotFoundException extends \InvalidArgumentException implements NotFoundExceptionInterface
+class NotFoundException extends DependencyInjectionException implements NotFoundExceptionInterface
 {
 }

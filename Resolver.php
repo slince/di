@@ -38,7 +38,7 @@ class Resolver
      * @param Definition $definition
      *
      * @return object
-     * @throws DependencyInjectionException|ReflectionException
+     * @throws DependencyInjectionException
      */
     public function resolve(Definition $definition): object
     {
@@ -78,7 +78,7 @@ class Resolver
     /**
      * Create instance for the class.
      *
-     * @throws DependencyInjectionException|ReflectionException
+     * @throws DependencyInjectionException
      */
     protected function createFromClass(Definition $definition): object
     {
@@ -92,19 +92,23 @@ class Resolver
             throw new DependencyInjectionException(sprintf('Can not instantiate "%s"', $definition->getClass()));
         }
         $constructor = $reflection->getConstructor();
-        if (is_null($constructor)) {
-            $instance = $reflection->newInstanceWithoutConstructor();
-        } else {
-            $arguments = $this->resolveArguments($definition->getArguments());
-            if ($definition->isAutowired()) {
-                $arguments = $this->resolveDependencies($constructor->getParameters(), $arguments);
-            }
-            if (count($arguments) < $constructor->getNumberOfRequiredParameters()) {
-                throw new ConfigException(sprintf('Too few arguments for class "%s"', $class));
-            }
-            $instance = $reflection->newInstanceArgs($arguments);
-        }
 
+        try {
+            if (is_null($constructor)) {
+                $instance = $reflection->newInstanceWithoutConstructor();
+            } else {
+                $arguments = $this->resolveArguments($definition->getArguments());
+                if ($definition->isAutowired()) {
+                    $arguments = $this->resolveDependencies($constructor->getParameters(), $arguments);
+                }
+                if (count($arguments) < $constructor->getNumberOfRequiredParameters()) {
+                    throw new ConfigException(sprintf('Too few arguments for class "%s"', $class));
+                }
+                $instance = $reflection->newInstanceArgs($arguments);
+            }
+        } catch (ReflectionException $exception) {
+            throw new DependencyInjectionException($exception);
+        }
         return $instance;
     }
 
@@ -156,7 +160,7 @@ class Resolver
      * @param \ReflectionParameter[] $dependencies
      * @param array $arguments
      * @return array
-     * @throws DependencyInjectionException|ReflectionException
+     * @throws DependencyInjectionException
      */
     protected function resolveDependencies(array $dependencies, array $arguments): array
     {

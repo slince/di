@@ -208,7 +208,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $id
      *
      * @return object
-     * @throws DependencyInjectionException|ReflectionException
+     * @throws DependencyInjectionException
      */
     public function get(string $id): object
     {
@@ -227,7 +227,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $id
      *
      * @return object
-     * @throws DependencyInjectionException|ReflectionException
+     * @throws DependencyInjectionException
      */
     public function getNew(string $id): object
     {
@@ -245,7 +245,7 @@ class Container implements \ArrayAccess, ContainerInterface
     }
 
     /**
-     * @throws DependencyInjectionException|ReflectionException
+     * @throws DependencyInjectionException
      */
     protected function resolveInstance(string $id): object
     {

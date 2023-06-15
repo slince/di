@@ -275,7 +275,7 @@ final class Definition
     /**
      * Sets the methods to call after service initialization.
      *
-     * @param array methods
+     * @param array $methods methods
      *
      * @return $this
      */

@@ -6,7 +6,7 @@ class Actor implements ActorInterface
 {
     private $birthday;
 
-    public function __construct(?\DateTime $birthday = null)
+    public function __construct(Foo $foo = null, ?\DateTime $birthday = null)
     {
         $this->birthday = $birthday;
     }

@@ -15,6 +15,14 @@ use Slince\Di\Tests\TestClass\Director;
 use Slince\Di\Tests\TestClass\Foo;
 use Slince\Di\Tests\TestClass\Movie;
 
+interface FooInterface { }
+
+class Foo1 implements FooInterface { }
+
+class Bar1 {
+    public function __construct(?FooInterface $foo = null) { }
+}
+
 class ContainerTest extends TestCase
 {
     public function testArrayAccess()
@@ -339,6 +347,13 @@ class ContainerTest extends TestCase
         $director = $container->get('director');
         $this->assertEquals('James', $director->getName());
         $this->assertEquals(45, $director->getAge());
+    }
+
+    public function testOptionalArgs()
+    {
+        $container = new Container();
+        $director = $container->get(Actor::class);
+        $this->assertInstanceOf(Actor::class, $director);
     }
 
     public function testSimpleGlobalParameter()
