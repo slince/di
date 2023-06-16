@@ -176,18 +176,23 @@ class Resolver
                 continue;
             }
 
+            $autoResolveDependencyException = null;
             if (null !== ($type = $dependency->getType()) && !$type->isBuiltin()) {
                 try {
                     $solved[] = $this->container->get($type->getName());
                     continue;
                 } catch (DependencyInjectionException $exception) {
-                    // ignore this
+                    $autoResolveDependencyException = $exception;
                 }
             }
 
             if ($dependency->isDefaultValueAvailable()) {
                 $solved[] = $dependency->getDefaultValue();
                 continue;
+            }
+
+            if (null !== $autoResolveDependencyException) {
+                throw $autoResolveDependencyException;
             }
 
             throw new DependencyInjectionException(sprintf(
