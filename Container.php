@@ -180,6 +180,17 @@ class Container implements \ArrayAccess, ContainerInterface
     }
 
     /**
+     * Checks whether the definition exists.
+     *
+     * @param string $id
+     * @return bool
+     */
+    public function hasDefinition(string $id): bool
+    {
+        return isset($this->definitions[$id]);
+    }
+
+    /**
      * Sets an alias for an existing service.
      *
      * @param string $alias
@@ -250,12 +261,7 @@ class Container implements \ArrayAccess, ContainerInterface
     protected function resolveInstance(string $id): object
     {
         if (!$this->has($id)) {
-            //If there is no matching definition, creates a definition.
-            if ($this->defaults['autoregister'] && class_exists($id)) {
-                $this->register($id);
-            } else {
-                throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
-            }
+            throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
         }
         // resolve instance.
         $instance = $this->resolver->resolve($this->definitions[$id]);
@@ -271,7 +277,14 @@ class Container implements \ArrayAccess, ContainerInterface
      */
     public function has($id): bool
     {
-        return isset($this->definitions[$id]);
+        if (!$this->hasDefinition($id)) {
+            //If there is no matching definition, creates a definition.
+            if ($autoRegistrable = ($this->defaults['autoregister'] && class_exists($id))) {
+                $this->register($id);
+            }
+            return $autoRegistrable;
+        }
+        return true;
     }
 
     /**
@@ -284,7 +297,7 @@ class Container implements \ArrayAccess, ContainerInterface
      */
     public function extend(string $id): Definition
     {
-        if (!$this->has($id)) {
+        if (!$this->hasDefinition($id)) {
             throw new NotFoundException(sprintf('There is no definition named "%s"', $id));
         }
         $definition = $this->definitions[$id];

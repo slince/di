@@ -156,11 +156,30 @@ class ContainerTest extends TestCase
         $this->assertEquals(25, $director->getAge());
     }
 
+    public function testHasDefinition()
+    {
+        $container = new Container();
+        $this->assertFalse($container->hasDefinition('not_exists_class'));
+        $this->assertFalse($container->hasDefinition(Director::class));
+
+        $container->register(new Director());
+        $container->get(Director::class);
+        $this->assertTrue($container->hasDefinition(Director::class));
+
+        $container->register(ActorInterface::class, Actor::class);
+        $this->assertTrue($container->hasDefinition(ActorInterface::class));
+
+        $container = new Container();
+        $container->register(new Director());
+        $this->assertTrue($container->hasDefinition(Director::class));
+    }
+
     public function testHas()
     {
         $container = new Container();
         $this->assertFalse($container->has('not_exists_class'));
-        $this->assertFalse($container->has(Director::class));
+        // auto register
+        $this->assertTrue($container->has(Director::class));
 
         $container->register(new Director());
         $container->get(Director::class);
